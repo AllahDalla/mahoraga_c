@@ -82,6 +82,7 @@ u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
 u64 king_attacks[64];
 u64 bishop_masks[64];
+u64 rook_masks[64];
 
 /**
  * Generates a bitboard representing pawn attack squares for a given side and square.
@@ -155,6 +156,7 @@ u64 mask_king_attacks(int square){
     return attacks;
 }
 
+// bishop occupancy mask
 u64 mask_bishop_attacks(int square){
     u64 attacks = 0ULL;
     u64 bitboard = 0ULL;
@@ -167,6 +169,7 @@ u64 mask_bishop_attacks(int square){
     for(rank = target_rank + 1, file = target_file + 1; rank <= 6 && file <= 6; rank++, file++){
         attacks |= (1ULL << (rank * 8 + file));
     }
+
     for(rank = target_rank - 1, file = target_file + 1; rank >= 1 && file <= 6; rank--, file++){
         attacks |= (1ULL << (rank * 8 + file));
     }
@@ -182,7 +185,105 @@ u64 mask_bishop_attacks(int square){
     return attacks;
 }
 
-void init_pawn_attacks(){
+// rook occupancy bits
+u64 mask_rook_attacks(int square){
+    u64 attacks = 0ULL;
+    u64 bitboard = 0ULL;
+    set_bit(bitboard, square);
+
+    int rank, file;
+    int target_rank = square / 8;
+    int target_file = square % 8;
+
+    for(rank = target_rank + 1; rank <= 6; rank++){
+        attacks |= (1ULL << (rank * 8 + target_file));
+    }
+
+    for(rank = target_rank - 1; rank >= 1; rank--){
+        attacks |= (1ULL << (rank * 8 + target_file));
+    }
+
+    for(file = target_file + 1; file <= 6; file++){
+        attacks |= (1ULL << (target_rank * 8 + file));
+    }
+
+    for(file = target_file - 1; file >= 1; file--){
+        attacks |= (1ULL << (target_rank * 8 + file));
+    }
+
+    return attacks;
+
+}
+
+
+
+u64 generate_bishop_attacks(int square, u64 block){
+    u64 attacks = 0ULL;
+    u64 bitboard = 0ULL;
+    set_bit(bitboard, square);
+
+    int rank, file;
+    int target_rank = square / 8;
+    int target_file = square % 8;
+
+    for(rank = target_rank + 1, file = target_file + 1; rank <= 7 && file <= 7; rank++, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+        if((1ULL << (rank * 8 + file)) & block) break;
+    }
+
+    for(rank = target_rank - 1, file = target_file + 1; rank >= 0 && file <= 7; rank--, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+        if((1ULL << (rank * 8 + file)) & block) break;
+    }
+
+    for(rank = target_rank + 1, file = target_file - 1; rank <= 7 && file >= 0; rank++, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+        if((1ULL << (rank * 8 + file)) & block) break;
+    }
+
+    for(rank = target_rank - 1, file = target_file - 1; rank >= 0 && file >= 0; rank--, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+        if((1ULL << (rank * 8 + file)) & block) break;
+    }
+
+    return attacks;
+}
+
+
+u64 generate_rook_attacks(int square, u64 block){
+    u64 attacks = 0ULL;
+    u64 bitboard = 0ULL;
+    set_bit(bitboard, square);
+
+    int rank, file;
+    int target_rank = square / 8;
+    int target_file = square % 8;
+
+    for(rank = target_rank + 1; rank <= 7; rank++){
+        attacks |= (1ULL << (rank * 8 + target_file));
+        if((1ULL << (rank * 8 + target_file)) & block) break;
+    }
+
+    for(rank = target_rank - 1; rank >= 0; rank--){
+        attacks |= (1ULL << (rank * 8 + target_file));
+        if((1ULL << (rank * 8 + target_file)) & block) break;
+    }
+
+    for(file = target_file + 1; file <= 7; file++){
+        attacks |= (1ULL << (target_rank * 8 + file));
+        if((1ULL << (target_rank * 8 + file)) & block) break;
+    }
+
+    for(file = target_file - 1; file >= 0; file--){
+        attacks |= (1ULL << (target_rank * 8 + file));
+        if((1ULL << (target_rank * 8 + file)) & block) break;
+    }
+
+    return attacks;
+
+}
+
+void init_leaper_attacks(){
     for(int square = 0; square < 64; square++){
         // pawn attacks
         pawn_attacks[white][square] = mask_pawn_attacks(white, square);
@@ -207,9 +308,15 @@ void init_pawn_attacks(){
 */
 
 int main(){
-    init_pawn_attacks(); 
+    init_leaper_attacks(); 
+
+    u64 bitboard = 0ULL;
+    set_bit(bitboard, d6);
+    set_bit(bitboard, d2);
+    set_bit(bitboard, g4);
+    set_bit(bitboard, b4);
     
-    print_bitboard(mask_bishop_attacks(d5));
+    print_bitboard(generate_rook_attacks(d4, bitboard));
 
     return 0;
 }
