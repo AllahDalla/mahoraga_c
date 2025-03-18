@@ -18,6 +18,23 @@ enum{
 
 enum {white, black};
 
+// all squares
+/**
+ * Mapping of board square indices to their corresponding algebraic chess notation coordinates.
+ * Allows conversion from zero-based square indices to standard chess board coordinate strings.
+ * Ordered from top-left (a8) to bottom-right (h1) of the chessboard.
+ */
+const char *square_to_coordinate[] = {
+    "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+    "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+    "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
+};
+
 
 /* 
     ********************************************
@@ -33,7 +50,43 @@ enum {white, black};
 #define set_bit(bitboard, square) (bitboard |= (1ULL << square))
 #define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= (1ULL << square) : 0)
 
+// count bits on bitboard
+/**
+ * Counts the number of set bits (1s) in a 64-bit bitboard.
+ * Uses Brian Kernighan's algorithm for efficient bit counting.
+ *
+ * @param bitboard The 64-bit unsigned integer to count bits in
+ * @return Number of set bits in the bitboard
+ */
+static inline int count_bits(u64 bitboard){
+    int count = 0;
+    while(bitboard){
+        count++;
+        bitboard &= bitboard - 1;
+    }
+    return count;
+}
 
+/**
+ * Finds the index of the least significant bit (LSB) in a bitboard.
+ * Uses bit manipulation to efficiently determine the position of the rightmost set bit.
+ *
+ * @param bitboard The 64-bit unsigned integer to find the LSB index in
+ * @return The zero-based index of the least significant bit, or -1 if no bits are set
+ */
+static inline int get_lsb_index(u64 bitboard){
+    if(bitboard){
+        return count_bits((bitboard & -bitboard) - 1);
+    }
+    return -1;
+}
+
+/**
+ * Prints a visual representation of a bitboard, displaying each bit's position
+ * on a chessboard grid with rank and file labels.
+ *
+ * @param bitboard The 64-bit unsigned integer representing the bitboard to print
+ */
 void print_bitboard(u64 bitboard){
     // loop over ranks
     printf("\n");
@@ -120,6 +173,12 @@ u64 mask_pawn_attacks(int side, int square){
     return attacks;
 }
 
+/**
+ * Generates a bitboard representing knight attack squares for a given square.
+ *
+ * @param square The starting square of the knight
+ * @return A bitboard representing the squares the knight can attack
+ */
 u64 mask_knight_attacks(int square){
     u64 attacks = 0ULL;
     u64 bitboard = 0ULL;
@@ -138,6 +197,12 @@ u64 mask_knight_attacks(int square){
 
 }
 
+/**
+ * Generates a bitboard representing king attack squares for a given square.
+ *
+ * @param square The starting square of the king
+ * @return A bitboard representing the squares the king can attack
+ */
 u64 mask_king_attacks(int square){
     u64 attacks = 0ULL;
     u64 bitboard = 0ULL;
@@ -217,6 +282,13 @@ u64 mask_rook_attacks(int square){
 
 
 
+/**
+ * Generates attack bitboard for a bishop at the given square, considering blocking pieces.
+ *
+ * @param square The chess board square (0-63) where the bishop is located
+ * @param block A bitboard representing blocking pieces
+ * @return A bitboard representing all squares the bishop can attack from the given square
+ */
 u64 generate_bishop_attacks(int square, u64 block){
     u64 attacks = 0ULL;
     u64 bitboard = 0ULL;
@@ -250,6 +322,13 @@ u64 generate_bishop_attacks(int square, u64 block){
 }
 
 
+/**
+ * Generates attack bitboard for a rook at the given square, considering blocking pieces.
+ *
+ * @param square The chess board square (0-63) where the rook is located
+ * @param block A bitboard representing blocking pieces
+ * @return A bitboard representing all squares the rook can attack from the given square
+ */
 u64 generate_rook_attacks(int square, u64 block){
     u64 attacks = 0ULL;
     u64 bitboard = 0ULL;
@@ -283,6 +362,12 @@ u64 generate_rook_attacks(int square, u64 block){
 
 }
 
+/**
+ * Initializes pre-computed attack bitboards for leaping pieces (pawns, knights, and kings).
+ * 
+ * Populates global attack lookup tables for each square on the chess board,
+ * generating attack patterns for white and black pawns, knights, and kings.
+ */
 void init_leaper_attacks(){
     for(int square = 0; square < 64; square++){
         // pawn attacks
@@ -315,8 +400,9 @@ int main(){
     set_bit(bitboard, d2);
     set_bit(bitboard, g4);
     set_bit(bitboard, b4);
-    
-    print_bitboard(generate_rook_attacks(d4, bitboard));
+    print_bitboard(bitboard);
+    printf("index -> %d  coordinate: %s", get_lsb_index(bitboard), square_to_coordinate[get_lsb_index(bitboard)]);
+
 
     return 0;
 }
