@@ -133,9 +133,24 @@ const u64 not_hg_file = 4557430888798830399ULL;
 // constant for not AB File
 const u64 not_ab_file = 18229723555195321596ULL;
 
+u64 rook_masks[64];
+u64 bishop_masks[64];
+
 u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
 u64 king_attacks[64];
+u64 rook_attacks[64][4096]; // [square][occupancy]
+u64 bishop_attacks[64][512]; // [square][occupancy]
+
+/**
+ * Defines the number of relevant bits for bishop magic bitboard generation on each square.
+ *
+ * These values are used to calculate the size of the occupancy variations for bishop attacks
+ * on different board squares, which is crucial for efficient magic bitboard move generation.
+ *
+ * @note The values vary based on the square's position on the chessboard, with edge squares
+ * having fewer relevant bits than central squares.
+ */
 const int bishop_relevant_bits[64] ={
     6,  5,  5,  5,  5,  5,  5,  6, 
     5,  5,  5,  5,  5,  5,  5,  5, 
@@ -147,6 +162,15 @@ const int bishop_relevant_bits[64] ={
     6,  5,  5,  5,  5,  5,  5,  6, 
 };
 
+/**
+ * Defines the number of relevant bits for rook magic bitboard generation on each square.
+ *
+ * These values are used to calculate the size of the occupancy variations for rook attacks
+ * on different board squares, which is crucial for efficient magic bitboard move generation.
+ *
+ * @note The values vary based on the square's position on the chessboard, with edge squares
+ * having more relevant bits than central squares.
+ */
 const int rook_relevant_bits[64] = {
     12,  11,  11,  11,  11,  11,  11,  12, 
     11,  10,  10,  10,  10,  10,  10,  11, 
@@ -157,6 +181,10 @@ const int rook_relevant_bits[64] = {
     11,  10,  10,  10,  10,  10,  10,  11,
     12,  11,  11,  11,  11,  11,  11,  12,
 };
+
+
+u64 bishop_magic_numbers[64];
+u64 rook_magic_numbers[64];
 
 /**
  * Generates a bitboard representing pawn attack squares for a given side and square.
@@ -383,6 +411,37 @@ u64 generate_rook_attacks(int square, u64 block){
 
 }
 
+
+/**
+ * Generates attack bitboard for a bishop at the given square, considering blocking pieces.
+ *
+ * @param square The chess board square (0-63) where the bishop is located
+ * @param block A bitboard representing blocking pieces
+ * @return A bitboard representing all squares the bishop can attack from the given square
+ */
+u64 get_bishop_attacks(int square, u64 block){
+    block &= bishop_masks[square];
+    block *= bishop_magic_numbers[square];
+    block >>= 64 - bishop_relevant_bits[square];
+
+    return bishop_attacks[square][block];
+}
+
+/**
+ * Generates attack bitboard for a rook at the given square, considering blocking pieces.
+ *
+ * @param square The chess board square (0-63) where the rook is located
+ * @param block A bitboard representing blocking pieces
+ * @return A bitboard representing all squares the rook can attack from the given square
+ */
+u64 get_rook_attacks(int square, u64 block){
+    block &= rook_masks[square];
+    block *= rook_magic_numbers[square];
+    block >>= 64 - rook_relevant_bits[square];
+
+    return rook_attacks[square][block];
+}
+
 /**
  * Initializes pre-computed attack bitboards for leaping pieces (pawns, knights, and kings).
  * 
@@ -404,6 +463,14 @@ void init_leaper_attacks(){
 }
 
 
+/**
+ * Generates an occupancy bitboard for a given attack mask and index.
+ * 
+ * @param index The index used to determine bit placement in the occupancy bitboard.
+ * @param bit_count The number of bits to set in the occupancy bitboard.
+ * @param attack_mask A bitboard representing possible attack squares.
+ * @return A 64-bit unsigned integer representing the generated occupancy configuration.
+ */
 u64 set_occupancy(int index, int bit_count, u64 attack_mask){
     u64 occupancy = 0ULL;
 
@@ -454,6 +521,11 @@ u64 random_64(){
 
 // generate magic number candidate
 
+/**
+ * Generates a candidate magic number for bitboard attack generation.
+ * 
+ * @return A 64-bit unsigned integer representing a potential magic number used in bitboard chess programming.
+ */
 u64 get_magic_candidate(){
     return random_64() & random_64() & random_64();
 }
@@ -513,14 +585,49 @@ u64 find_magic_number(int square, int relevant_bits, int isBishop){
 
 
 
+/**
+ * Initializes magic numbers for rook and bishop attack tables.
+ * 
+ * Generates and stores pre-computed magic numbers for efficient bitboard
+ * attack lookups for both rook and bishop pieces across all 64 board squares.
+ */
 void init_magics(){
     for(int square = 0; square < 64; square++){
-       printf("Square: %s; 0x%lluXULL\n", square_to_coordinate[square], find_magic_number(square, rook_relevant_bits[square], rook));
+       rook_magic_numbers[square] = find_magic_number(square, rook_relevant_bits[square], rook);
     }
 
-    printf("\n\n");
     for(int square = 0; square < 64; square++){
-       printf("Square: %s;  0x%lluXULL\n", square_to_coordinate[square], find_magic_number(square, bishop_relevant_bits[square], bishop));
+       bishop_magic_numbers[square] = find_magic_number(square, bishop_relevant_bits[square], bishop);
+    }
+}
+
+void init_slider_attacks(int isBishop){
+    for(int square = 0; square < 64; square++){
+        bishop_masks[square] = mask_bishop_attacks(square);
+        rook_masks[square] = mask_rook_attacks(square);
+
+        u64 attack_mask = isBishop ? bishop_masks[square] : rook_masks[square];
+        // int relevant_bits = count_bits(attack_mask);
+
+        int relevant_bits = isBishop ? bishop_relevant_bits[square] : rook_relevant_bits[square];
+
+        int occupancy_indicies = 1 << relevant_bits;
+
+        for(int index = 0; index < occupancy_indicies; index++){
+            if(isBishop){
+                u64 occupancy = set_occupancy(index, relevant_bits, attack_mask);
+                int magic_index = (int)((occupancy * bishop_magic_numbers[square]) >> (64 - bishop_relevant_bits[square]));
+                bishop_attacks[square][magic_index] = generate_bishop_attacks(square, occupancy);
+            
+            }else{
+                u64 occupancy = set_occupancy(index, relevant_bits, attack_mask);
+                int magic_index = (int)((occupancy * rook_magic_numbers[square]) >> (64 - rook_relevant_bits[square]));
+                rook_attacks[square][magic_index] = generate_rook_attacks(square, occupancy);
+            
+            }
+        }
+
+
     }
 }
 
@@ -539,10 +646,16 @@ void init_magics(){
 
 
 int main(){
-    init_leaper_attacks(); 
+    // init_leaper_attacks(); 
 
     init_magics();
 
+    init_slider_attacks(bishop);
+
+    u64 occupancy = 0ULL;
+    set_bit(occupancy, c5);
+    
+    print_bitboard(get_bishop_attacks(d4, occupancy));
 
 
     return 0;
