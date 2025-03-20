@@ -15,10 +15,61 @@ enum{
     a3, b3, c3, d3, e3, f3, g3, h3,
     a2, b2, c2, d2, e2, f2, g2, h2,
     a1, b1, c1, d1, e1, f1, g1, h1,
+    no_sq
 };
 
-enum {white, black};
+enum {white, black, both};
 enum{rook, bishop};
+
+// castling rights flags definition
+
+/**
+ * 0001 - 1: white can castle kingside
+ * 0010 - 2: white can castle queenside
+ * 0100 - 4: black can castle kingside
+ * 1000 - 8: black can castle queenside
+ * 1111 - 15: both sides can castle
+ * 1001 - 9: white king side castle & black king queenside castle
+ */
+
+ //enum for castling rights
+ enum{
+    white_can_castle_kingside = 1,
+    white_can_castle_queenside = 2,
+    black_can_castle_kingside = 4,
+    black_can_castle_queenside = 8,
+};
+
+enum {
+    P, N, B, R, Q, K, p, n, b, r, q, k
+};
+
+// piece names
+const char * ascii_pieces[12] = {
+    "P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"
+};
+
+// Unicode chess pieces
+const wchar_t* chess_pieces_unicode[12];
+
+// piece bitboards
+u64 piece_bitboards[12];
+
+// occupancy bitboards
+u64 occupancy_bitboards[3];
+
+// side to move
+int side;
+
+// enpassant square
+int enpassant = no_sq;
+
+// castling rights
+int castle;
+
+
+
+
 
 // all squares
 /**
@@ -48,9 +99,9 @@ const char *square_to_coordinate[] = {
 */
 
 // bit macros
-#define get_bit(bitboard, square) (bitboard & (1ULL << square))
-#define set_bit(bitboard, square) (bitboard |= (1ULL << square))
-#define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= (1ULL << square) : 0)
+#define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
+#define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
+#define pop_bit(bitboard, square) (get_bit(bitboard, square) ? (bitboard) ^= (1ULL << (square)) : 0)
 
 // count bits on bitboard
 /**
@@ -114,6 +165,43 @@ void print_bitboard(u64 bitboard){
 
     // unsigned long long decimal of bitboard
     printf("\n  bitboard: %llu decimal\n", bitboard);
+}
+
+void print_chessboard(){
+    // loop over ranks
+    printf("\n");
+    for(int rank = 0; rank < 8; rank++){
+        // loop over files
+        for(int file = 0; file < 8; file++){
+            // get square index
+            int square = rank * 8 + file;
+            if(!file){
+                printf("%d ", 8 - rank);
+            }
+
+            // get piece at square
+            int piece = -1;
+
+            for(int count = 0; count < 12; count++){
+                if(get_bit(piece_bitboards[count], square)){
+                    piece = count;
+                }
+            }
+
+            printf("%s ", ((piece == -1) ? "." : ascii_pieces[piece]));
+            
+        }
+        printf("\n");
+    }
+
+    printf("\n  a b c d e f g h\n");
+
+    printf("\n");
+
+    printf("side:             %s\n", ((side == white) ? "white" : "black"));
+    printf("enpassant:        %s\n", ((enpassant == no_sq) ? "none" : square_to_coordinate[enpassant]));
+    printf("castle:           %c%c%c%c\n", ((castle & white_can_castle_kingside) ? 'K': '-'), ((castle & white_can_castle_queenside) ? 'Q': '-'), ((castle & black_can_castle_kingside) ? 'k': '-'), ((castle & black_can_castle_queenside) ? 'q': '-'));
+
 }
 
 /* 
@@ -646,16 +734,80 @@ void init_slider_attacks(int isBishop){
 
 
 int main(){
+    
     // init_leaper_attacks(); 
 
-    init_magics();
+    // init_magics();
 
-    init_slider_attacks(bishop);
+    // init_slider_attacks(bishop);    
 
-    u64 occupancy = 0ULL;
-    set_bit(occupancy, c5);
-    
-    print_bitboard(get_bishop_attacks(d4, occupancy));
+    // set white pawns
+    set_bit(piece_bitboards[P], e2);
+    set_bit(piece_bitboards[P], d2);
+    set_bit(piece_bitboards[P], c2);
+    set_bit(piece_bitboards[P], b2);
+    set_bit(piece_bitboards[P], a2);
+    set_bit(piece_bitboards[P], f2);
+    set_bit(piece_bitboards[P], g2);
+    set_bit(piece_bitboards[P], h2);
+
+    print_bitboard(piece_bitboards[P]);
+
+    // set white knights
+    set_bit(piece_bitboards[N], b1);
+    set_bit(piece_bitboards[N], g1);
+
+    // set white bishops
+    set_bit(piece_bitboards[B], c1);
+    set_bit(piece_bitboards[B], f1);
+
+    // set white rooks
+    set_bit(piece_bitboards[R], a1);
+    set_bit(piece_bitboards[R], h1);
+
+    // set white queens
+    set_bit(piece_bitboards[Q], d1);
+
+    // set white king
+    set_bit(piece_bitboards[K], e1);
+
+    // set black pawns
+    set_bit(piece_bitboards[p], e7);
+    set_bit(piece_bitboards[p], d7);
+    set_bit(piece_bitboards[p], c7);
+    set_bit(piece_bitboards[p], b7);
+    set_bit(piece_bitboards[p], a7);
+    set_bit(piece_bitboards[p], f7);
+    set_bit(piece_bitboards[p], g7);
+    set_bit(piece_bitboards[p], h7);
+
+    // set black knights
+    set_bit(piece_bitboards[n], b8);
+    set_bit(piece_bitboards[n], g8);
+
+    // set black bishops
+    set_bit(piece_bitboards[b], c8);
+    set_bit(piece_bitboards[b], f8);
+
+    // set black rooks
+    set_bit(piece_bitboards[r], a8);
+    set_bit(piece_bitboards[r], h8);
+
+    // set black queens
+    set_bit(piece_bitboards[q], d8);
+
+    // set black king
+    set_bit(piece_bitboards[k], e8);
+
+    enpassant = e4;
+
+    castle |= white_can_castle_kingside;
+    castle |= white_can_castle_queenside;
+    // castle |= black_can_castle_kingside;
+    castle |= black_can_castle_queenside;
+
+    // print_bitboard(piece_bitboards[P]);
+    print_chessboard();
 
 
     return 0;
