@@ -4,6 +4,15 @@
 // define bitboard data type
 #define u64 unsigned long long
 
+
+// FEN dedug positions
+#define empty_board "8/8/8/8/8/8/8/8 w - - "
+#define start_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 "
+#define tricky_position "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
+#define killer_position "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq d5 0 1"
+#define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
+
+
 // board squares
 enum{
 
@@ -167,6 +176,16 @@ void print_bitboard(u64 bitboard){
     printf("\n  bitboard: %llu decimal\n", bitboard);
 }
 
+
+/* 
+    ********************************************
+    *
+    *               HELPER FUNCTIONS
+    * 
+    * 
+    ******************************************** 
+*/
+
 void print_chessboard(){
     // loop over ranks
     printf("\n");
@@ -203,6 +222,127 @@ void print_chessboard(){
     printf("castle:           %c%c%c%c\n", ((castle & white_can_castle_kingside) ? 'K': '-'), ((castle & white_can_castle_queenside) ? 'Q': '-'), ((castle & black_can_castle_kingside) ? 'k': '-'), ((castle & black_can_castle_queenside) ? 'q': '-'));
 
 }
+
+
+// parse fen string
+
+int char_to_piece(int c) {
+    switch(c) {
+        case 'P': return P;
+        case 'N': return N;
+        case 'B': return B;
+        case 'R': return R;
+        case 'Q': return Q;
+        case 'K': return K;
+        case 'p': return p;
+        case 'n': return n;
+        case 'b': return b;
+        case 'r': return r;
+        case 'q': return q;
+        case 'k': return k;
+        default: return -1; // Not a valid piece
+    }
+}
+
+void parse_fen(char *fen){
+
+    // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1  START
+    // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1  TRICKY
+
+    // printf("parsing fen string: %c\n", fen[0]);
+
+    int index = 0;
+    int space = 1;
+
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
+            if(fen[index] == '/'){
+                index++;
+            }
+            // number of spaces
+            if(fen[index] >= '1' && fen[index] <= '8'){
+                int temp = fen[index] - '0';
+                if(temp == 8){
+                    index++;
+                    break;
+                }
+                if(space < temp){
+                    space++;
+                    continue;
+                }else{
+                    index++;
+                    space = 1;
+                    continue;
+                }
+            }
+
+            
+
+            int square = rank * 8 + file;
+            char c = fen[index++];
+            int piece = (int)char_to_piece(c);
+            set_bit(piece_bitboards[piece], square);
+        }
+    }
+
+    for(int i = 0; fen[index] != '\0'; i++){
+        if(fen[index] == ' '){
+            index++;
+            continue;
+        }
+
+        if(fen[index] == 'w'){
+            side = white;
+            index++;
+            continue;
+        }
+        
+        if(fen[index] == 'b'){
+            side = black;
+            index++;
+            continue;
+        }
+
+        // white king can castle kingside
+        if(fen[index] == 'K'){
+            castle |= white_can_castle_kingside;
+            index++;
+            continue;
+        }
+        // white king can castle queenside
+        if(fen[index] == 'Q'){
+            castle |= white_can_castle_queenside;
+            index++;
+            continue;
+        }
+        // black king can castle kingside
+        if(fen[index] == 'k'){
+            castle |= black_can_castle_kingside;
+            index++;
+            continue;
+        }
+        // black king can castle queenside
+        if(fen[index] == 'q'){
+            castle |= black_can_castle_queenside;
+            index++;
+            continue;
+        }
+
+        if(fen[index] >= 'a' && fen[index] <= 'h'){
+            //  enpassant square
+            int rank = (int)(8 - (fen[index + 1] - '0'));
+            int file = (int)(fen[index] - 'a'); 
+            enpassant = rank * 8 + file;
+        }
+
+        index++;
+    }
+
+}
+
+
+
+
 
 /* 
     ********************************************
@@ -741,63 +881,71 @@ int main(){
 
     // init_slider_attacks(bishop);    
 
+
+    parse_fen(cmk_position);
+    print_chessboard();
+
+    // set_bit(piece_bitboards[r], a8);
+    // print_bitboard(piece_bitboards[r]);
+
+
     // set white pawns
-    set_bit(piece_bitboards[P], e2);
-    set_bit(piece_bitboards[P], d2);
-    set_bit(piece_bitboards[P], c2);
-    set_bit(piece_bitboards[P], b2);
-    set_bit(piece_bitboards[P], a2);
-    set_bit(piece_bitboards[P], f2);
-    set_bit(piece_bitboards[P], g2);
-    set_bit(piece_bitboards[P], h2);
+    // set_bit(piece_bitboards[P], e2);
+    // set_bit(piece_bitboards[P], d2);
+    // set_bit(piece_bitboards[P], c2);
+    // set_bit(piece_bitboards[P], b2);
+    // set_bit(piece_bitboards[P], a2);
+    // set_bit(piece_bitboards[P], f2);
+    // set_bit(piece_bitboards[P], g2);
+    // set_bit(piece_bitboards[P], h2);
 
-    print_bitboard(piece_bitboards[P]);
+    // print_bitboard(piece_bitboards[P]);
 
-    // set white knights
-    set_bit(piece_bitboards[N], b1);
-    set_bit(piece_bitboards[N], g1);
+    // // set white knights
+    // set_bit(piece_bitboards[N], b1);
+    // set_bit(piece_bitboards[N], g1);
 
-    // set white bishops
-    set_bit(piece_bitboards[B], c1);
-    set_bit(piece_bitboards[B], f1);
+    // // set white bishops
+    // set_bit(piece_bitboards[B], c1);
+    // set_bit(piece_bitboards[B], f1);
 
-    // set white rooks
-    set_bit(piece_bitboards[R], a1);
-    set_bit(piece_bitboards[R], h1);
+    // // set white rooks
+    // set_bit(piece_bitboards[R], a1);
+    // set_bit(piece_bitboards[R], h1);
 
-    // set white queens
-    set_bit(piece_bitboards[Q], d1);
+    // // set white queens
+    // set_bit(piece_bitboards[Q], d1);
 
-    // set white king
-    set_bit(piece_bitboards[K], e1);
+    // // set white king
+    // set_bit(piece_bitboards[K], e1);
 
-    // set black pawns
-    set_bit(piece_bitboards[p], e7);
-    set_bit(piece_bitboards[p], d7);
-    set_bit(piece_bitboards[p], c7);
-    set_bit(piece_bitboards[p], b7);
-    set_bit(piece_bitboards[p], a7);
-    set_bit(piece_bitboards[p], f7);
-    set_bit(piece_bitboards[p], g7);
-    set_bit(piece_bitboards[p], h7);
+    // // set black pawns
+    // set_bit(piece_bitboards[p], e7);
+    // set_bit(piece_bitboards[p], d7);
+    // set_bit(piece_bitboards[p], c7);
+    // set_bit(piece_bitboards[p], b7);
+    // set_bit(piece_bitboards[p], a7);
+    // set_bit(piece_bitboards[p], f7);
+    // set_bit(piece_bitboards[p], g7);
+    // set_bit(piece_bitboards[p], h7);
 
-    // set black knights
-    set_bit(piece_bitboards[n], b8);
-    set_bit(piece_bitboards[n], g8);
+    // // set black knights
+    // set_bit(piece_bitboards[n], b8);
+    // set_bit(piece_bitboards[n], g8);
 
-    // set black bishops
-    set_bit(piece_bitboards[b], c8);
-    set_bit(piece_bitboards[b], f8);
+    // // set black bishops
+    // set_bit(piece_bitboards[b], c8);
+    // set_bit(piece_bitboards[b], f8);
 
-    // set black rooks
-    set_bit(piece_bitboards[r], a8);
-    set_bit(piece_bitboards[r], h8);
+    // // set black rooks
+    // set_bit(piece_bitboards[r], a8);
+    // set_bit(piece_bitboards[r], h8);
 
-    // set black queens
-    set_bit(piece_bitboards[q], d8);
+    // // set black queens
+    // set_bit(piece_bitboards[q], d8);
 
-    // set black king
-    set_bit(piece_bitboards[k], e8);
+    // // set black king
+    // set_bit(piece_bitboards[k], e8);
 
     enpassant = e4;
 
@@ -807,7 +955,7 @@ int main(){
     castle |= black_can_castle_queenside;
 
     // print_bitboard(piece_bitboards[P]);
-    print_chessboard();
+    // print_chessboard();
 
 
     return 0;
