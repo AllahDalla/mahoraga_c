@@ -226,6 +226,12 @@ void print_chessboard(){
 
 // parse fen string
 
+/**
+ * Converts a character representation of a chess piece to its corresponding piece enum.
+ *
+ * @param c The character representing a chess piece (uppercase for white, lowercase for black)
+ * @return The piece enum value, or -1 if the character is not a valid chess piece
+ */
 int char_to_piece(int c) {
     switch(c) {
         case 'P': return P;
@@ -244,16 +250,28 @@ int char_to_piece(int c) {
     }
 }
 
+/**
+ * Parses a Forsyth-Edwards Notation (FEN) string and initializes the chess board state.
+ *
+ * This function populates piece bitboards, sets the active side, determines castling rights,
+ * and sets the en passant square based on the provided FEN string.
+ *
+ * @param fen A null-terminated string representing the chess board state in FEN format
+ */
 void parse_fen(char *fen){
 
-    // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1  START
-    // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1  TRICKY
 
-    // printf("parsing fen string: %c\n", fen[0]);
+    // clear bitboards and occupancy bitboards and initialize side to white, enpassant to no_sq, and castle to 0
+    memset(piece_bitboards, 0ULL, sizeof(piece_bitboards));
+    memset(occupancy_bitboards, 0ULL, sizeof(occupancy_bitboards));
+    side = white;
+    enpassant = no_sq;
+    castle = 0;
 
     int index = 0;
     int space = 1;
 
+    // set board state from fen string
     for(int rank = 0; rank < 8; rank++){
         for(int file = 0; file < 8; file++){
             if(fen[index] == '/'){
@@ -285,6 +303,7 @@ void parse_fen(char *fen){
         }
     }
 
+    // set side, enpassant, and castle
     for(int i = 0; fen[index] != '\0'; i++){
         if(fen[index] == ' '){
             index++;
@@ -337,6 +356,16 @@ void parse_fen(char *fen){
 
         index++;
     }
+
+    for(int piece_color = P; piece_color <= k; piece_color++){
+        if(piece_color >= P && piece_color <= K){
+            occupancy_bitboards[white] |= piece_bitboards[piece_color];
+        }else{
+            occupancy_bitboards[black] |= piece_bitboards[piece_color];
+        }
+    }
+
+    occupancy_bitboards[both] |= occupancy_bitboards[white] | occupancy_bitboards[black];
 
 }
 
@@ -670,6 +699,65 @@ u64 get_rook_attacks(int square, u64 block){
     return rook_attacks[square][block];
 }
 
+
+/**
+ * Generates attack bitboard for a queen at the given square, considering blocking pieces.
+ *
+ * @param square The chess board square (0-63) where the queen is located
+ * @param block A bitboard representing blocking pieces
+ * @return A bitboard representing all squares the queen can attack from the given square
+ */
+u64 get_queen_attacks(int square, u64 block){
+    return get_bishop_attacks(square, block) | get_rook_attacks(square, block);
+}
+
+/**
+ * Determines if a given square is under attack by any opponent's piece.
+ *
+ * Checks for potential attacks from pawns, knights, bishops, rooks, queens, and kings
+ * based on the current board state and the specified side.
+ *
+ * @param square The chess board square (0-63) to check for attacks
+ * @param side The color of the side being checked for potential attacks against
+ * @return 1 if the square is attacked, 0 otherwise
+ * 
+ * eg usage: for checking if a king is in check.
+ */
+static inline int is_square_attacked(int square, int side){
+
+    // pawns
+    if((side == white) ? (pawn_attacks[black][square] & piece_bitboards[P]) : (pawn_attacks[white][square] & piece_bitboards[p])) return 1;
+
+    // knights
+    if((side == white) ? (knight_attacks[square] & piece_bitboards[N]) : (knight_attacks[square] & piece_bitboards[n])) return 1;
+
+    // bishops
+    if((side == white) ? (get_bishop_attacks(square, occupancy_bitboards[both]) & piece_bitboards[B]) : (get_bishop_attacks(square, occupancy_bitboards[both]) & piece_bitboards[b])) return 1;
+
+    // rooks
+    if((side == white) ? (get_rook_attacks(square, occupancy_bitboards[both]) & piece_bitboards[R]) : (get_rook_attacks(square, occupancy_bitboards[both]) & piece_bitboards[r])) return 1;
+
+    // queens
+    if((side == white) ? (get_queen_attacks(square, occupancy_bitboards[both]) & piece_bitboards[Q]) : (get_queen_attacks(square, occupancy_bitboards[both]) & piece_bitboards[q])) return 1;
+
+    // kings
+    if((side == white) ? (king_attacks[square] & piece_bitboards[K]) : (king_attacks[square] & piece_bitboards[k])) return 1;
+
+    return 0;
+}
+
+
+/* 
+    ********************************************
+    *
+    *               MAGIC NUMBERS 
+    *                    &
+    *               LOOKUP TABLES
+    * 
+    * 
+    ******************************************** 
+*/
+
 /**
  * Initializes pre-computed attack bitboards for leaping pieces (pawns, knights, and kings).
  * 
@@ -829,6 +917,15 @@ void init_magics(){
     }
 }
 
+/**
+ * Initializes pre-computed attack tables for slider pieces (bishops and rooks).
+ * 
+ * Generates attack masks and populates attack lookup tables using magic bitboard technique
+ * for both bishops and rooks across all 64 board squares. This function creates efficient
+ * attack pattern lookups by using magic numbers and occupancy configurations.
+ * 
+ * @param isBishop Flag to determine whether to generate attacks for bishops (1) or rooks (0)
+ */
 void init_slider_attacks(int isBishop){
     for(int square = 0; square < 64; square++){
         bishop_masks[square] = mask_bishop_attacks(square);
@@ -860,6 +957,22 @@ void init_slider_attacks(int isBishop){
 }
 
 
+/**
+ * Initializes the chess engine by setting up attack tables and magic bitboards.
+ * 
+ * This function prepares the engine for chess move generation by:
+ * - Initializing leaper piece attack patterns
+ * - Generating magic numbers for slider pieces (bishops and rooks)
+ * - Precomputing attack tables for bishops and rooks
+ */
+void initialize_engine(){
+    init_leaper_attacks();
+    init_magics();
+    init_slider_attacks(bishop);
+    init_slider_attacks(rook);
+}
+
+
 
 
 
@@ -875,88 +988,12 @@ void init_slider_attacks(int isBishop){
 
 int main(){
     
-    // init_leaper_attacks(); 
+    initialize_engine();   
 
-    // init_magics();
-
-    // init_slider_attacks(bishop);    
-
-
-    parse_fen(cmk_position);
+    parse_fen(tricky_position);
     print_chessboard();
 
-    // set_bit(piece_bitboards[r], a8);
-    // print_bitboard(piece_bitboards[r]);
-
-
-    // set white pawns
-    // set_bit(piece_bitboards[P], e2);
-    // set_bit(piece_bitboards[P], d2);
-    // set_bit(piece_bitboards[P], c2);
-    // set_bit(piece_bitboards[P], b2);
-    // set_bit(piece_bitboards[P], a2);
-    // set_bit(piece_bitboards[P], f2);
-    // set_bit(piece_bitboards[P], g2);
-    // set_bit(piece_bitboards[P], h2);
-
-    // print_bitboard(piece_bitboards[P]);
-
-    // // set white knights
-    // set_bit(piece_bitboards[N], b1);
-    // set_bit(piece_bitboards[N], g1);
-
-    // // set white bishops
-    // set_bit(piece_bitboards[B], c1);
-    // set_bit(piece_bitboards[B], f1);
-
-    // // set white rooks
-    // set_bit(piece_bitboards[R], a1);
-    // set_bit(piece_bitboards[R], h1);
-
-    // // set white queens
-    // set_bit(piece_bitboards[Q], d1);
-
-    // // set white king
-    // set_bit(piece_bitboards[K], e1);
-
-    // // set black pawns
-    // set_bit(piece_bitboards[p], e7);
-    // set_bit(piece_bitboards[p], d7);
-    // set_bit(piece_bitboards[p], c7);
-    // set_bit(piece_bitboards[p], b7);
-    // set_bit(piece_bitboards[p], a7);
-    // set_bit(piece_bitboards[p], f7);
-    // set_bit(piece_bitboards[p], g7);
-    // set_bit(piece_bitboards[p], h7);
-
-    // // set black knights
-    // set_bit(piece_bitboards[n], b8);
-    // set_bit(piece_bitboards[n], g8);
-
-    // // set black bishops
-    // set_bit(piece_bitboards[b], c8);
-    // set_bit(piece_bitboards[b], f8);
-
-    // // set black rooks
-    // set_bit(piece_bitboards[r], a8);
-    // set_bit(piece_bitboards[r], h8);
-
-    // // set black queens
-    // set_bit(piece_bitboards[q], d8);
-
-    // // set black king
-    // set_bit(piece_bitboards[k], e8);
-
-    enpassant = e4;
-
-    castle |= white_can_castle_kingside;
-    castle |= white_can_castle_queenside;
-    // castle |= black_can_castle_kingside;
-    castle |= black_can_castle_queenside;
-
-    // print_bitboard(piece_bitboards[P]);
-    // print_chessboard();
-
+    printf("%s", (is_square_attacked(e2, black) == 1 ? "yes" : "no"));
 
     return 0;
 }
