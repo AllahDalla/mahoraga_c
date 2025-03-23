@@ -58,6 +58,19 @@ const char * ascii_pieces[12] = {
     "P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"
 };
 
+
+// promoted piece
+const char promoted_pieces[] ={
+    [Q] = 'q',
+    [R] = 'r',
+    [B] = 'b',
+    [N] = 'n',
+    [q] = 'q',
+    [r] = 'r',
+    [b] = 'b',
+    [n] = 'n'
+};
+
 // Unicode chess pieces
 const wchar_t* chess_pieces_unicode[12];
 
@@ -720,6 +733,161 @@ u64 get_queen_attacks(int square, u64 block){
     ******************************************** 
 */
 
+
+// BINARY ENCODING KEYS
+                                                      
+/**
+ *                                                                  Hexadecimal Representation
+ *  0000 0000 0000 0000 0011 1111 - source square -                            0x3F
+ *  0000 0000 0000 1111 1100 0000 - target square -                            0xFC0
+ *  0000 0000 1111 0000 0000 0000 - piece -                                    0xF000
+ *  0000 1111 0000 0000 0000 0000 - promoted piece -                           0xF0000
+ *  0001 0000 0000 0000 0000 0000 - capture flag -                             0x100000
+ *  0010 0000 0000 0000 0000 0000 - double pawn push flag -                    0x200000
+ *  0100 0000 0000 0000 0000 0000 - en passant flag -                          0x400000
+ *  1000 0000 0000 0000 0000 0000 - castling flag -                            0x800000
+ */
+
+// define macros to encode and decode each piece of information
+
+/**
+ * Encodes a chess move into a compact 32-bit integer representation.
+ * 
+ * @param source The source square (0-63) of the move
+ * @param target The target square (0-63) of the move
+ * @param piece The moving piece type (0-15)
+ * @param promoted_piece The piece type to promote to, if applicable (0-15)
+ * @param capture Flag indicating if the move is a capture (0 or 1)
+ * @param double_push Flag indicating if it's a double pawn push (0 or 1)
+ * @param en_passant Flag indicating if it's an en passant capture (0 or 1)
+ * @param castling Flag indicating if it's a castling move (0 or 1)
+ * @return A bitwise-packed 32-bit integer representing the complete move
+ */
+#define encode_move(source, target, piece, promoted_piece, capture, double_push, en_passant, castling) \
+    (source) | (target << 6) | (piece << 12) | (promoted_piece << 16) | (capture << 20) | (double_push << 21) | (en_passant << 22) | (castling << 23)
+
+/**
+ * Extracts the source square from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The source square (0-63) derived from the least significant 6 bits
+ */
+#define get_source_square(move) (move & 0x3F)
+/**
+ * Extracts the target square from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The target square (0-63) derived from bits 6-11 of the move encoding
+ */
+/**
+ * Extracts the target square from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The target square (0-63) derived from bits 6-11 of the move encoding
+ */
+#define get_target_square(move) ((move & 0xFC0) >> 6)
+/**
+ * Extracts the piece from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The piece (0-15) derived from bits 12-15 of the move encoding
+ */
+#define get_piece(move) ((move & 0xF000) >> 12)
+/**
+ * Extracts the promoted piece from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The promoted piece (0-15) derived from bits 16-19 of the move encoding
+ */
+#define get_promoted_piece(move) ((move & 0xF0000) >> 16)
+/**
+ * Extracts the capture flag from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The capture flag (0 or 1) derived from bit 20 of the move encoding
+ */
+#define get_capture(move) ((move & 0x100000) >> 20)
+/**
+ * Extracts the double push flag from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The double push flag (0 or 1) derived from bit 21 of the move encoding
+ */
+#define get_double_push(move) ((move & 0x200000) >> 21)
+/**
+ * Extracts the en passant flag from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The en passant flag (0 or 1) derived from bit 22 of the move encoding
+ */
+#define get_enpassant(move) ((move & 0x400000) >> 22)
+/**
+ * Extracts the castling flag from an encoded move.
+ * 
+ * @param move The encoded move containing bitwise-packed move information
+ * @return The castling flag (0 or 1) derived from bit 23 of the move encoding
+ */
+#define get_castling(move) ((move & 0x800000) >> 23)
+
+// move struct
+/**
+ * Represents a collection of chess moves with a fixed-size array and move count.
+ * 
+ * @param move_list An array to store up to 256 encoded chess moves
+ * @param move_count the index  of the next available move slot in the move_list array
+ */
+typedef struct {
+    int move_list[256];
+    int move_count;
+} moves;
+
+
+/**
+ * Adds a move to the move list and increments the move count.
+ * 
+ * @param moves_list Pointer to the moves structure to update
+ * @param move The encoded chess move to add to the list
+ */
+static inline void add_move(moves *moves_list, int move){
+    moves_list->move_list[moves_list->move_count] = move;
+    moves_list->move_count++;
+}
+
+
+// print move
+/**
+ * Prints the details of an encoded chess move.
+ * 
+ * @param move The encoded chess move to be printed, containing source square, target square, and potential promoted piece
+ * @brief Displays the source and target squares, along with any promoted piece information
+ */
+void print_move(int move){
+    printf("[Source, Target, Promoted Piece]\n\n");
+    printf("[%s, %s, %c]\n", square_to_coordinate[get_source_square(move)], square_to_coordinate[get_target_square(move)], promoted_pieces[get_promoted_piece(move)]);
+}
+
+
+// print move_list
+
+/**
+ * Prints detailed information about all moves in a move list.
+ * 
+ * Iterates through each move in the move list and prints:
+ * - Source and target squares
+ * - Promoted piece (if applicable)
+ * - Piece type
+ * - Move flags (capture, double push, en passant, castling)
+ * 
+ * @param moves_list Pointer to the moves structure containing the list of moves to print
+ */
+void print_moves_list(moves *moves_list){
+    for(int count = 0; count < moves_list->move_count; count++){
+        print_move(moves_list->move_list[count]);
+        printf("Piece: %s Capture Flag: %d Double-Push Flag: %d En passant Flag: %d Castling Flag: %d\n\n", ascii_pieces[get_piece(moves_list->move_list[count])], get_capture(moves_list->move_list[count]), get_double_push(moves_list->move_list[count]), get_enpassant(moves_list->move_list[count]), get_castling(moves_list->move_list[count]));
+    }
+    printf("Move Count: %d\n", moves_list->move_count);
+}
+
 /**
  * Determines if a given square is under attack by any opponent's piece.
  *
@@ -1334,101 +1502,6 @@ void initialize_engine(){
 }
 
 
-// BINARY ENCODING KEYS
-                                                      
-/**
- *                                                                  Hexadecimal Representation
- *  0000 0000 0000 0000 0011 1111 - source square -                            0x3F
- *  0000 0000 0000 1111 1100 0000 - target square -                            0xFC0
- *  0000 0000 1111 0000 0000 0000 - piece -                                    0xF000
- *  0000 1111 0000 0000 0000 0000 - promoted piece -                           0xF0000
- *  0001 0000 0000 0000 0000 0000 - capture flag -                             0x100000
- *  0010 0000 0000 0000 0000 0000 - double pawn push flag -                    0x200000
- *  0100 0000 0000 0000 0000 0000 - en passant flag -                          0x400000
- *  1000 0000 0000 0000 0000 0000 - castling flag -                            0x800000
- */
-
-// define macros to encode and decode each piece of information
-
-/**
- * Encodes a chess move into a compact 32-bit integer representation.
- * 
- * @param source The source square (0-63) of the move
- * @param target The target square (0-63) of the move
- * @param piece The moving piece type (0-15)
- * @param promoted_piece The piece type to promote to, if applicable (0-15)
- * @param capture Flag indicating if the move is a capture (0 or 1)
- * @param double_push Flag indicating if it's a double pawn push (0 or 1)
- * @param en_passant Flag indicating if it's an en passant capture (0 or 1)
- * @param castling Flag indicating if it's a castling move (0 or 1)
- * @return A bitwise-packed 32-bit integer representing the complete move
- */
-#define encode_move(source, target, piece, promoted_piece, capture, double_push, en_passant, castling) \
-    (source) | (target << 6) | (piece << 12) | (promoted_piece << 16) | (capture << 20) | (double_push << 21) | (en_passant << 22) | (castling << 23)
-
-/**
- * Extracts the source square from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The source square (0-63) derived from the least significant 6 bits
- */
-#define get_source_square(move) (move & 0x3F)
-/**
- * Extracts the target square from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The target square (0-63) derived from bits 6-11 of the move encoding
- */
-/**
- * Extracts the target square from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The target square (0-63) derived from bits 6-11 of the move encoding
- */
-#define get_target_square(move) ((move & 0xFC0) >> 6)
-/**
- * Extracts the piece from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The piece (0-15) derived from bits 12-15 of the move encoding
- */
-#define get_piece(move) ((move & 0xF000) >> 12)
-/**
- * Extracts the promoted piece from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The promoted piece (0-15) derived from bits 16-19 of the move encoding
- */
-#define get_promoted_piece(move) ((move & 0xF0000) >> 16)
-/**
- * Extracts the capture flag from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The capture flag (0 or 1) derived from bit 20 of the move encoding
- */
-#define get_capture(move) ((move & 0x100000) >> 20)
-/**
- * Extracts the double push flag from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The double push flag (0 or 1) derived from bit 21 of the move encoding
- */
-#define get_double_push(move) ((move & 0x200000) >> 21)
-/**
- * Extracts the en passant flag from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The en passant flag (0 or 1) derived from bit 22 of the move encoding
- */
-#define get_enpassant(move) ((move & 0x400000) >> 22)
-/**
- * Extracts the castling flag from an encoded move.
- * 
- * @param move The encoded move containing bitwise-packed move information
- * @return The castling flag (0 or 1) derived from bit 23 of the move encoding
- */
-#define get_castling(move) ((move & 0x800000) >> 23)
-
 
 /* 
     ********************************************
@@ -1448,27 +1521,11 @@ int main(){
     // print_chessboard();
     // generate_moves();
 
-    int move = encode_move(e2, e4, P, Q, 0, 0, 0, 0);
+    moves moves_list[1];
+    moves_list->move_count = 0;
 
-    int source = get_source_square(move);
-    int target = get_target_square(move);
-    int piece = get_piece(move);
-    int promoted_piece = get_promoted_piece(move);
-    int capture = get_capture(move);
-    int double_push = get_double_push(move);
-    int en_passant = get_enpassant(move);
-    int castling = get_castling(move);
-
-    printf("Source: %s\n", square_to_coordinate[source]);
-    printf("Target: %s\n", square_to_coordinate[target]);
-    printf("Piece: %d\n", piece);
-    printf("Promoted Piece: %d\n", promoted_piece);
-    printf("Capture: %d\n", capture);
-    printf("Double Push: %d\n", double_push);
-    printf("En Passant: %d\n", en_passant);
-    printf("Castling: %d\n", castling);
-   
-
+    add_move(moves_list, encode_move(e2, f4, N, 0, 0, 0, 0, 0));
+    print_moves_list(moves_list);
 
     return 0;
 }
