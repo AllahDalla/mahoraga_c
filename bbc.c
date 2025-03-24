@@ -125,6 +125,48 @@ const char *square_to_coordinate[] = {
 #define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
 #define pop_bit(bitboard, square) (get_bit(bitboard, square) ? (bitboard) ^= (1ULL << (square)) : 0)
 
+
+/**
+ * Creates a deep copy of the current chess board state.
+ * 
+ * This macro copies all critical board state variables, including:
+ * - Piece bitboards
+ * - Occupancy bitboards
+ * - Side to move
+ * - En passant square
+ * - Castling rights
+ * 
+ * Allows for temporary board state manipulation without losing the original board configuration.
+ */
+#define copy_board() \
+    u64 copy_piece_bitboards[12];\
+    u64 copy_occupancy_bitboards[3];\
+    int copy_side, copy_enpassant, copy_castle;\
+    memcpy(copy_piece_bitboards, piece_bitboards, 96);\
+    memcpy(copy_occupancy_bitboards, occupancy_bitboards, 24);\
+    copy_side = side;\
+    copy_enpassant = enpassant;\
+    copy_castle = castle;\
+
+/**
+ * Restores the chess board state from a previously created deep copy.
+ * 
+ * This macro reverses the effects of copy_board() by restoring:
+ * - Piece bitboards
+ * - Occupancy bitboards
+ * - Side to move
+ * - En passant square
+ * - Castling rights
+ * 
+ * Allows recovery of the original board configuration after temporary manipulation.
+ */
+#define restore_board()\
+    memcpy(piece_bitboards, copy_piece_bitboards, 96);\
+    memcpy(occupancy_bitboards, copy_occupancy_bitboards, 24);\
+    side = copy_side;\
+    enpassant = copy_enpassant;\
+    castle = copy_castle;\
+
 // count bits on bitboard
 /**
  * Counts the number of set bits (1s) in a 64-bit bitboard.
@@ -923,6 +965,62 @@ static inline int is_square_attacked(int square, int side){
     return 0;
 }
 
+enum {all_moves, captures_only};
+
+// make move
+int make_move(int move, int move_flag){
+    // check if move is quiet move
+    if(move_flag == all_moves){
+        // copy board
+        copy_board();
+
+        // get move info
+        int source_square = get_source_square(move);
+        int target_square = get_target_square(move);
+        int piece = get_piece(move);
+        int promoted_piece = get_promoted_piece(move);
+        int capture_flag = get_capture(move);
+        int double_push_flag = get_double_push(move);
+        int enpassant_flag = get_enpassant(move);
+        int castling_flag = get_castling(move);
+
+        // make move
+        pop_bit(piece_bitboards[piece], source_square);
+        set_bit(piece_bitboards[piece], target_square);
+
+        // handle captures
+        if(capture_flag){
+            int start_piece, end_piece;
+            if(side == white){
+                start_piece = p;
+                end_piece = k;
+            }else{
+                start_piece = P;
+                end_piece = K;
+            }
+
+            // loop over  all pieces and remove captured piece
+            for(int piece = start_piece; piece <= end_piece; piece++){
+                // check if piece is on target square
+                if(get_bit(piece_bitboards[piece], target_square)){
+                    // remove piece from bitboard
+                    pop_bit(piece_bitboards[piece], target_square);
+                    break;
+                }
+            }
+
+        }
+
+    }else{
+        // check if move is capture
+        if(get_capture(move)){
+            make_move(move, all_moves);
+        }else{
+            return 0;
+        }
+    }
+}
+
 
 
 // generate all moves for a given side
@@ -1504,8 +1602,6 @@ void initialize_engine(){
     init_slider_attacks(rook);
 }
 
-
-
 /* 
     ********************************************
     *
@@ -1526,11 +1622,33 @@ int main(){
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
     parse_fen(tricky_position);
     print_chessboard();
-    generate_moves(moves_list);
-    print_moves_list(moves_list);
+    
+    moves move_list[1];
+    
+    // generate moves
+    generate_moves(move_list);
+    
+    // loop over generated moves
+    for (int count = 0; count < move_list->move_count; count++)
+    {
+        // init move
+        int move = move_list->move_list[count];
+        
+        // preserve board state
+        copy_board();
 
-    // printf("\n\n");
-    // print_bitboard(get_rook_attacks(a1, occupancy_bitboards[both]) & ~occupancy_bitboards[white]);
+        print_move(move);
+        // make move
+        make_move(move, all_moves);
+        print_chessboard();
+        getchar();
+        
+        // take back
+        restore_board();
+        print_chessboard();
+        getchar();
+    }
+
 
     return 0;
 }
