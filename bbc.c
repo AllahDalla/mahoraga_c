@@ -967,6 +967,18 @@ static inline int is_square_attacked(int square, int side){
 
 enum {all_moves, captures_only};
 
+// castling rights updates constants
+const int castling_rights[64] = {
+    7, 15, 15, 15,  3, 15, 15, 11,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    13, 15, 15, 15, 12, 15, 15, 14
+};
+
 // make move
 int make_move(int move, int move_flag){
     // check if move is quiet move
@@ -1010,6 +1022,73 @@ int make_move(int move, int move_flag){
             }
 
         }
+
+        // handle pawn promotion
+        if(promoted_piece){
+            // remove piece from source square
+            pop_bit(piece_bitboards[piece], target_square);
+
+            // add promoted piece to target square
+            set_bit(piece_bitboards[promoted_piece], target_square);
+        }
+
+        // handle en passant
+        if(enpassant_flag){
+            // remove captured pawn from target square
+            (side == white) ? pop_bit(piece_bitboards[p], target_square + 8) : pop_bit(piece_bitboards[P], target_square - 8);
+        }
+
+        // reset en passant square
+        enpassant = no_sq;
+
+        // handle setting en passant square
+        if(double_push_flag){
+            (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
+        }
+
+        // handle castling moves
+        if(castling_flag){
+            switch(target_square){
+                // white king side caastling
+                case (g1):
+                        pop_bit(piece_bitboards[R], h1);
+                        set_bit(piece_bitboards[R], f1);
+                        break;
+                // white queen side castling
+                case (c1):
+                        pop_bit(piece_bitboards[R], a1);
+                        set_bit(piece_bitboards[R], d1);
+                        break;
+                // black king side castling
+                case (g8):
+                        pop_bit(piece_bitboards[r], h8);
+                        set_bit(piece_bitboards[r], f8);
+                        break;
+                // black queen side castling
+                case (c8):
+                        pop_bit(piece_bitboards[r], a8);
+                        set_bit(piece_bitboards[r], d8);
+                        break;
+            }
+        } 
+
+        // update castling rights
+        castle &= castling_rights[source_square];
+        castle &= castling_rights[target_square];
+
+        // update occupancy bitboards
+        memset(occupancy_bitboards, 0ULL, 24);
+
+        // loop over pieces
+        for(int piece = P; piece <= k; piece++){
+            if(piece >= P && piece <= K){
+                occupancy_bitboards[white] |= piece_bitboards[piece];
+            }else{
+                occupancy_bitboards[black] |= piece_bitboards[piece];
+            }
+        }
+
+        occupancy_bitboards[both] = occupancy_bitboards[white] | occupancy_bitboards[black];
 
     }else{
         // check if move is capture
@@ -1620,7 +1699,7 @@ int main(){
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen(tricky_position);
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/2pPN3/1p2P3/1pN2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ");
     print_chessboard();
     
     moves move_list[1];
@@ -1641,6 +1720,7 @@ int main(){
         // make move
         make_move(move, all_moves);
         print_chessboard();
+        print_bitboard(occupancy_bitboards[white]);
         getchar();
         
         // take back
