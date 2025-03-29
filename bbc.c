@@ -1000,6 +1000,7 @@ int make_move(int move, int move_flag){
         pop_bit(piece_bitboards[piece], source_square);
         set_bit(piece_bitboards[piece], target_square);
 
+
         // handle captures
         if(capture_flag){
             int start_piece, end_piece;
@@ -1088,8 +1089,31 @@ int make_move(int move, int move_flag){
             }
         }
 
+        // update both color occupancy bitboard
         occupancy_bitboards[both] = occupancy_bitboards[white] | occupancy_bitboards[black];
 
+        // // check if king square is in check
+        side ^= 1; // flip side 
+
+        if(side == white){
+            int square_index = get_lsb_index(piece_bitboards[k]); // get index of black king
+            if(is_square_attacked(square_index, side)){
+                // take back illegal move
+                restore_board();
+                return 0; // return that move is illegal
+            }else{
+                return 1; // return that move is legal
+            }
+        }else{
+            int square_index = get_lsb_index(piece_bitboards[K]); // get index of white king
+            if(is_square_attacked(square_index, side)){
+                // take back illegal move
+                restore_board();
+                return 0; // return that move is illegal
+            }else{
+                return 1; // return that move is legal
+            }
+        }
     }else{
         // check if move is capture
         if(get_capture(move)){
@@ -1098,6 +1122,7 @@ int make_move(int move, int move_flag){
             return 0;
         }
     }
+    return 0;
 }
 
 
@@ -1694,12 +1719,10 @@ void initialize_engine(){
 int main(){
     
     initialize_engine();   
-    moves moves_list[1];
-    // moves_list->move_count = 0;
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/2pPN3/1p2P3/1pN2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ");
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBrPPP/R3K2R w KQkq - 0 1 ");
     print_chessboard();
     
     moves move_list[1];
@@ -1716,11 +1739,13 @@ int main(){
         // preserve board state
         copy_board();
 
+        if(!make_move(move, all_moves)){
+            // illegal move
+            continue;
+        }
+
         print_move(move);
-        // make move
-        make_move(move, all_moves);
         print_chessboard();
-        print_bitboard(occupancy_bitboards[white]);
         getchar();
         
         // take back
