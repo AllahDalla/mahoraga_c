@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <windows.h>
 
 // define bitboard data type
 #define u64 unsigned long long
@@ -12,6 +13,16 @@
 #define killer_position "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq d5 0 1"
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
 
+
+
+/**
+ * Retrieves the current system tick count in milliseconds.
+ *
+ * @return Current system tick count as an integer
+ */
+int get_time(){
+    return GetTickCount();
+}
 
 // board squares
 enum{
@@ -495,8 +506,138 @@ const int rook_relevant_bits[64] = {
 };
 
 
-u64 bishop_magic_numbers[64];
-u64 rook_magic_numbers[64];
+u64 bishop_magic_numbers[64] = {
+    0x40040844404084ULL,
+    0x2004208a004208ULL,
+    0x10190041080202ULL,
+    0x108060845042010ULL,
+    0x581104180800210ULL,
+    0x2112080446200010ULL,
+    0x1080820820060210ULL,
+    0x3c0808410220200ULL,
+    0x4050404440404ULL,
+    0x21001420088ULL,
+    0x24d0080801082102ULL,
+    0x1020a0a020400ULL,
+    0x40308200402ULL,
+    0x4011002100800ULL,
+    0x401484104104005ULL,
+    0x801010402020200ULL,
+    0x400210c3880100ULL,
+    0x404022024108200ULL,
+    0x810018200204102ULL,
+    0x4002801a02003ULL,
+    0x85040820080400ULL,
+    0x810102c808880400ULL,
+    0xe900410884800ULL,
+    0x8002020480840102ULL,
+    0x220200865090201ULL,
+    0x2010100a02021202ULL,
+    0x152048408022401ULL,
+    0x20080002081110ULL,
+    0x4001001021004000ULL,
+    0x800040400a011002ULL,
+    0xe4004081011002ULL,
+    0x1c004001012080ULL,
+    0x8004200962a00220ULL,
+    0x8422100208500202ULL,
+    0x2000402200300c08ULL,
+    0x8646020080080080ULL,
+    0x80020a0200100808ULL,
+    0x2010004880111000ULL,
+    0x623000a080011400ULL,
+    0x42008c0340209202ULL,
+    0x209188240001000ULL,
+    0x400408a884001800ULL,
+    0x110400a6080400ULL,
+    0x1840060a44020800ULL,
+    0x90080104000041ULL,
+    0x201011000808101ULL,
+    0x1a2208080504f080ULL,
+    0x8012020600211212ULL,
+    0x500861011240000ULL,
+    0x180806108200800ULL,
+    0x4000020e01040044ULL,
+    0x300000261044000aULL,
+    0x802241102020002ULL,
+    0x20906061210001ULL,
+    0x5a84841004010310ULL,
+    0x4010801011c04ULL,
+    0xa010109502200ULL,
+    0x4a02012000ULL,
+    0x500201010098b028ULL,
+    0x8040002811040900ULL,
+    0x28000010020204ULL,
+    0x6000020202d0240ULL,
+    0x8918844842082200ULL,
+    0x4010011029020020ULL
+};
+u64 rook_magic_numbers[64] = {
+    0x8a80104000800020ULL,
+    0x140002000100040ULL,
+    0x2801880a0017001ULL,
+    0x100081001000420ULL,
+    0x200020010080420ULL,
+    0x3001c0002010008ULL,
+    0x8480008002000100ULL,
+    0x2080088004402900ULL,
+    0x800098204000ULL,
+    0x2024401000200040ULL,
+    0x100802000801000ULL,
+    0x120800800801000ULL,
+    0x208808088000400ULL,
+    0x2802200800400ULL,
+    0x2200800100020080ULL,
+    0x801000060821100ULL,
+    0x80044006422000ULL,
+    0x100808020004000ULL,
+    0x12108a0010204200ULL,
+    0x140848010000802ULL,
+    0x481828014002800ULL,
+    0x8094004002004100ULL,
+    0x4010040010010802ULL,
+    0x20008806104ULL,
+    0x100400080208000ULL,
+    0x2040002120081000ULL,
+    0x21200680100081ULL,
+    0x20100080080080ULL,
+    0x2000a00200410ULL,
+    0x20080800400ULL,
+    0x80088400100102ULL,
+    0x80004600042881ULL,
+    0x4040008040800020ULL,
+    0x440003000200801ULL,
+    0x4200011004500ULL,
+    0x188020010100100ULL,
+    0x14800401802800ULL,
+    0x2080040080800200ULL,
+    0x124080204001001ULL,
+    0x200046502000484ULL,
+    0x480400080088020ULL,
+    0x1000422010034000ULL,
+    0x30200100110040ULL,
+    0x100021010009ULL,
+    0x2002080100110004ULL,
+    0x202008004008002ULL,
+    0x20020004010100ULL,
+    0x2048440040820001ULL,
+    0x101002200408200ULL,
+    0x40802000401080ULL,
+    0x4008142004410100ULL,
+    0x2060820c0120200ULL,
+    0x1001004080100ULL,
+    0x20c020080040080ULL,
+    0x2935610830022400ULL,
+    0x44440041009200ULL,
+    0x280001040802101ULL,
+    0x2100190040002085ULL,
+    0x80c0084100102001ULL,
+    0x4024081001000421ULL,
+    0x20030a0244872ULL,
+    0x12001008414402ULL,
+    0x2006104900a0804ULL,
+    0x1004081002402ULL
+};
 
 /**
  * Generates a bitboard representing pawn attack squares for a given side and square.
@@ -614,8 +755,7 @@ u64 mask_bishop_attacks(int square){
 // rook occupancy bits
 u64 mask_rook_attacks(int square){
     u64 attacks = 0ULL;
-    u64 bitboard = 0ULL;
-    set_bit(bitboard, square);
+    
 
     int rank, file;
     int target_rank = square / 8;
@@ -692,9 +832,7 @@ u64 generate_bishop_attacks(int square, u64 block){
  */
 u64 generate_rook_attacks(int square, u64 block){
     u64 attacks = 0ULL;
-    u64 bitboard = 0ULL;
-    set_bit(bitboard, square);
-
+    
     int rank, file;
     int target_rank = square / 8;
     int target_file = square % 8;
@@ -904,7 +1042,6 @@ static inline void add_move(moves *moves_list, int move){
  * @brief Displays the source and target squares, along with any promoted piece information
  */
 void print_move(int move){
-    printf("[Source, Target, Promoted Piece]\n\n");
     printf("[%s, %s, %c]\n", square_to_coordinate[get_source_square(move)], square_to_coordinate[get_target_square(move)], promoted_pieces[get_promoted_piece(move)]);
 }
 
@@ -1668,19 +1805,19 @@ void init_slider_attacks(int isBishop){
         u64 attack_mask = isBishop ? bishop_masks[square] : rook_masks[square];
         // int relevant_bits = count_bits(attack_mask);
 
-        int relevant_bits = isBishop ? bishop_relevant_bits[square] : rook_relevant_bits[square];
+        int relevant_bits = count_bits(attack_mask);
 
-        int occupancy_indicies = 1 << relevant_bits;
+        int occupancy_indicies = (1 << relevant_bits);
 
         for(int index = 0; index < occupancy_indicies; index++){
             if(isBishop){
                 u64 occupancy = set_occupancy(index, relevant_bits, attack_mask);
-                int magic_index = (int)((occupancy * bishop_magic_numbers[square]) >> (64 - bishop_relevant_bits[square]));
+                int magic_index = ((occupancy * bishop_magic_numbers[square]) >> (64 - bishop_relevant_bits[square]));
                 bishop_attacks[square][magic_index] = generate_bishop_attacks(square, occupancy);
             
             }else{
                 u64 occupancy = set_occupancy(index, relevant_bits, attack_mask);
-                int magic_index = (int)((occupancy * rook_magic_numbers[square]) >> (64 - rook_relevant_bits[square]));
+                int magic_index = ((occupancy * rook_magic_numbers[square]) >> (64 - rook_relevant_bits[square]));
                 rook_attacks[square][magic_index] = generate_rook_attacks(square, occupancy);
             
             }
@@ -1701,7 +1838,7 @@ void init_slider_attacks(int isBishop){
  */
 void initialize_engine(){
     init_leaper_attacks();
-    init_magics();
+    // init_magics();
     init_slider_attacks(bishop);
     init_slider_attacks(rook);
 }
@@ -1715,22 +1852,21 @@ void initialize_engine(){
     ******************************************** 
 */
 
+long nodes;
+long perft_captures;
+long perft_enpassant;
+long perft_castling;
 
-int main(){
-    
-    initialize_engine();   
+static inline void perf_driver(int depth){
+    // base condition
+    if(depth == 0){
+        nodes++;
+        return;
+    }
 
-    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
-    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBrPPP/R3K2R w KQkq - 0 1 ");
-    print_chessboard();
-    
     moves move_list[1];
-    
-    // generate moves
     generate_moves(move_list);
-    
-    // loop over generated moves
+
     for (int count = 0; count < move_list->move_count; count++)
     {
         // init move
@@ -1738,22 +1874,89 @@ int main(){
         
         // preserve board state
         copy_board();
+        if(!make_move(move, all_moves)){
+            // illegal move
+            continue;
+        }
+        
+        if(get_capture(move)){
+            perft_captures++;
+        }
 
+        if(get_enpassant(move)){
+            perft_enpassant++;
+        }
+
+        if(get_castling(move)){
+            perft_castling++;
+        }
+
+        perf_driver(depth - 1);
+        // take back
+        restore_board();
+    }
+
+}
+
+void perft(int depth){
+    printf("Performance Test : \n\n");
+
+    int start_time = get_time();
+
+    moves move_list[1];
+    generate_moves(move_list);
+
+    for (int count = 0; count < move_list->move_count; count++)
+    {
+        // init move
+        int move = move_list->move_list[count];
+        
+        // preserve board state
+        copy_board();
         if(!make_move(move, all_moves)){
             // illegal move
             continue;
         }
 
-        print_move(move);
-        print_chessboard();
-        getchar();
+        long cummalative_nodes = nodes;
+
+        perf_driver(depth - 1);
         
+        long old_nodes = nodes - cummalative_nodes;
         // take back
+        print_move(move);
+        printf("Nodes [inside]: %ld\n", old_nodes);
+        // print_chessboard();
+        // printf("--------------------------------------\n");
         restore_board();
-        print_chessboard();
-        getchar();
+
     }
 
+    printf("\n\nTime Elapsed: %d ms\n", get_time() - start_time);
+    printf("Nodes: %ld\n", nodes);
+    printf("Captures: %ld\n", perft_captures);
+    printf("Enpassant: %ld\n", perft_enpassant);
+    printf("Castling: %ld\n", perft_castling);
+    printf("Depth: %d\n", depth);
+    printf("--------------------------------------\n");
 
+}
+
+
+int main(){
+    
+    initialize_engine();   
+
+    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
+    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
+    parse_fen(start_position);
+    
+    perft(6);
+
+    // u64 block = 0ULL;
+    // set_bit(block, a2);
+
+    // print_bitboard(generate_rook_attacks(a1, block));
+    
     return 0;
 }
