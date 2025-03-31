@@ -1843,19 +1843,17 @@ void initialize_engine(){
     init_slider_attacks(rook);
 }
 
+
 /* 
     ********************************************
     *
-    *               MAIN DRIVER
+    *               PERFT
     * 
     * 
     ******************************************** 
 */
 
 long nodes;
-long perft_captures;
-long perft_enpassant;
-long perft_castling;
 
 static inline void perf_driver(int depth){
     // base condition
@@ -1879,18 +1877,6 @@ static inline void perf_driver(int depth){
             continue;
         }
         
-        if(get_capture(move)){
-            perft_captures++;
-        }
-
-        if(get_enpassant(move)){
-            perft_enpassant++;
-        }
-
-        if(get_castling(move)){
-            perft_castling++;
-        }
-
         perf_driver(depth - 1);
         // take back
         restore_board();
@@ -1926,21 +1912,26 @@ void perft(int depth){
         // take back
         print_move(move);
         printf("Nodes [inside]: %ld\n", old_nodes);
-        // print_chessboard();
-        // printf("--------------------------------------\n");
+        
         restore_board();
 
     }
 
     printf("\n\nTime Elapsed: %d ms\n", get_time() - start_time);
     printf("Nodes: %ld\n", nodes);
-    printf("Captures: %ld\n", perft_captures);
-    printf("Enpassant: %ld\n", perft_enpassant);
-    printf("Castling: %ld\n", perft_castling);
-    printf("Depth: %d\n", depth);
     printf("--------------------------------------\n");
 
 }
+
+
+/* 
+    ********************************************
+    *
+    *               MAIN DRIVER
+    * 
+    * 
+    ******************************************** 
+*/
 
 
 int main(){
@@ -1949,14 +1940,9 @@ int main(){
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen(start_position);
+    parse_fen(tricky_position);
     
-    perft(6);
+    perft(2);
 
-    // u64 block = 0ULL;
-    // set_bit(block, a2);
-
-    // print_bitboard(generate_rook_attacks(a1, block));
-    
     return 0;
 }
