@@ -1919,6 +1919,7 @@ void perft(int depth){
 
     printf("\n\nTime Elapsed: %d ms\n", get_time() - start_time);
     printf("Nodes: %ld\n", nodes);
+    printf("Depth: %d\n", depth);
     printf("--------------------------------------\n");
 
 }
@@ -1940,9 +1941,9 @@ int main(){
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen(tricky_position);
+    parse_fen(start_position);
     
-    perft(2);
+    perft(8);
 
     return 0;
 }
