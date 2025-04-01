@@ -1924,6 +1924,56 @@ void perft(int depth){
 
 }
 
+/* 
+    ********************************************
+    *
+    *               UCI
+    * 
+    * 
+    ******************************************** 
+*/
+
+int parse_move(char* move_str){
+    // create moves list and generate moves
+    moves moves_list[1];
+    generate_moves(moves_list);
+
+    // parse move string
+    int source_square = (move_str[0] - 'a') + (8 - (move_str[1] - '0')) * 8;
+    int target_square = (move_str[2] - 'a') + (8 - (move_str[3] - '0')) * 8;
+    
+    // loop over all moves in move list
+    for(int count = 0; count <= moves_list->move_count; count ++){
+        // get move
+        int move = moves_list->move_list[count];
+
+        // check if parsed moves are in move list
+        if(source_square == get_source_square(move) && target_square == get_target_square(move)){
+            // get promoted piece if any
+            int promoted_piece = get_promoted_piece(move);
+            // check for promoted piece
+            if(promoted_piece){
+                // check if move string contains the proper promoted piece matched with move in move list
+                if((promoted_piece == Q || promoted_piece == q) && move_str[4] == 'q'){
+                    return move;
+                }else if((promoted_piece == R || promoted_piece == r) && move_str[4] == 'r'){
+                    return move;
+                }else if((promoted_piece == B || promoted_piece == b) && move_str[4] == 'b'){
+                    return move;
+                }else if((promoted_piece == N || promoted_piece == n) && move_str[4] == 'n'){
+                    return move;
+                }
+                // return false if not matches were found
+                continue;
+            }
+            // return legal move
+            return move;
+        }
+    }
+    // return move is illegal
+    return 0;
+}
+
 
 /* 
     ********************************************
@@ -1941,9 +1991,21 @@ int main(){
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen(start_position);
+    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R b KQkq - 0 1 ");
+
+    print_chessboard();
     
-    perft(8);
+    int move = parse_move("g2g1p");
+    
+    if(move){
+        make_move(move, all_moves);
+        print_chessboard();
+    }else{
+        printf("\nIllegal move\n");
+    }
+    
+    
+
 
     return 0;
 }
