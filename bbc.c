@@ -1975,6 +1975,57 @@ int parse_move(char* move_str){
 }
 
 
+// parse position
+
+void parse_position(char *command){
+    // point to command
+    command += 9;
+    // init pointer
+    char *current_char = command;
+
+    if(strncmp(command, "startpos", 8) == 0){
+        // start position
+        parse_fen(start_position);
+    }else{
+        // parse fen 
+        current_char = strstr(command, "fen");
+        if(current_char == NULL){
+            // parse fen
+            parse_fen(start_position);
+        }else{
+            current_char += 4;
+            parse_fen(current_char);
+        }
+    }
+
+    // parse moves
+    current_char = strstr(command, "moves");
+
+    if(current_char != NULL){
+        // parse moves
+        current_char += 6;
+        
+        while(*current_char){
+            int move = parse_move(current_char);
+
+            if(move == 0){
+                break;
+            }
+
+            make_move(move, all_moves);
+
+            while(*current_char && *current_char != ' '){
+                current_char++;
+            }
+
+            // go to next move
+            current_char++;
+        }
+    }
+
+}
+
+
 /* 
     ********************************************
     *
@@ -1991,21 +2042,22 @@ int main(){
 
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R b KQkq - 0 1 ");
+    // parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R b KQkq - 0 1 ");
 
+    // print_chessboard();
+    
+    // int move = parse_move("g2g1q");
+    
+    // if(move){
+    //     make_move(move, all_moves);
+    //     print_chessboard();
+    // }else{
+    //     printf("\nIllegal move\n");
+    // }
+    
+    
+    parse_position("position startpos moves e2e4");
     print_chessboard();
-    
-    int move = parse_move("g2g1p");
-    
-    if(move){
-        make_move(move, all_moves);
-        print_chessboard();
-    }else{
-        printf("\nIllegal move\n");
-    }
-    
-    
-
 
     return 0;
 }
