@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <windows.h>
 
@@ -12,6 +13,40 @@
 #define tricky_position "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
 #define killer_position "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq d5 0 1"
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
+
+
+// Add this global variable
+FILE *log_file = NULL;
+
+// Add this function to initialize logging
+void init_log() {
+    log_file = fopen("mahoraga_log.txt", "w");
+    if (log_file == NULL) {
+        fprintf(stderr, "Failed to open log file\n");
+    }
+}
+
+// Add this function to close the log file
+void close_log() {
+    if (log_file != NULL) {
+        fclose(log_file);
+    }
+}
+
+// Add this function to log messages
+void log_message(const char *format, ...) {
+    if (log_file != NULL) {
+        va_list args;
+        va_start(args, format);
+        vfprintf(log_file, format, args);
+        va_end(args);
+        fflush(log_file);  // Ensure it's written immediately
+    }
+}
+
+
+
+
 
 
 
@@ -1853,8 +1888,24 @@ void initialize_engine(){
     ******************************************** 
 */
 
+/** 
+ * Global counter to track the number of nodes explored during performance testing.
+ * 
+ * Used in perft (performance testing) to count the total number of legal moves 
+ * generated and explored during a recursive move tree traversal.
+ */
 long nodes;
 
+/**
+ * Recursively explores the move tree for performance testing.
+ * 
+ * This function is an internal helper for perft (performance testing) that:
+ * - Generates all possible moves at the current board state
+ * - Recursively explores each move to the specified depth
+ * - Increments the global nodes counter when reaching the base depth
+ * 
+ * @param depth The remaining depth to explore in the move tree
+ */
 static inline void perf_driver(int depth){
     // base condition
     if(depth == 0){
@@ -1884,6 +1935,17 @@ static inline void perf_driver(int depth){
 
 }
 
+/**
+ * Performs a performance test (perft) to count the number of legal moves at a given depth.
+ * 
+ * This function generates all possible moves, recursively explores the move tree,
+ * and prints detailed performance statistics including:
+ * - Number of nodes (legal moves) explored
+ * - Time elapsed
+ * - Depth of search
+ * 
+ * @param depth The maximum depth to explore in the move tree
+ */
 void perft(int depth){
     printf("Performance Test : \n\n");
 
@@ -1933,6 +1995,16 @@ void perft(int depth){
     ******************************************** 
 */
 
+/**
+ * Parses a move string and validates it against the current board's legal moves.
+ * 
+ * Converts a UCI-style move string (e.g., "e2e4" or "e7e8q") into a valid chess move.
+ * Handles both standard moves and promotion moves by checking source, target squares,
+ * and optional promotion piece.
+ * 
+ * @param move_str A string representing the move in UCI notation
+ * @return The corresponding move if valid, or 0 if the move is illegal
+ */
 int parse_move(char* move_str){
     // create moves list and generate moves
     moves moves_list[1];
@@ -1977,6 +2049,18 @@ int parse_move(char* move_str){
 
 // parse position
 
+/**
+ * Parses a UCI position command to set up the chess board.
+ * 
+ * Handles two types of position commands:
+ * 1. "startpos" to set the initial chess starting position
+ * 2. "fen [FEN_STRING]" to set a custom board position
+ * 
+ * If moves are specified after the position, the function applies 
+ * those moves sequentially to the board.
+ * 
+ * @param command The full UCI position command string
+ */
 void parse_position(char *command){
     // point to command
     command += 9;
@@ -2025,6 +2109,126 @@ void parse_position(char *command){
 
 }
 
+/**
+ * Parses the search depth from a 'go' command.
+ * 
+ * Extracts the depth value from the command string. If no depth is specified,
+ * defaults to a search depth of 6.
+ * 
+ * @param command The input command string containing search parameters
+ */
+void parse_go(char *command){
+    // parse depth
+    int depth = 0;
+    char *current_char = strstr(command, "depth");
+    if(current_char != NULL){
+        current_char += 6;
+        depth = atoi(current_char);
+    }else{
+        // default depth
+        depth = 6;
+    }
+
+    printf("bestmove e7e6\n");
+}
+
+/**
+ * Name of the chess engine.
+ * 
+ * Defines the identifier used when reporting the engine's name
+ * during UCI (Universal Chess Interface) communication.
+ */
+char *engine_name = "Mahoraga";
+/**
+ * Name of the chess engine's author.
+ * 
+ * Defines the identifier used when reporting the engine's author
+ * during UCI (Universal Chess Interface) communication.
+ */
+char *engine_author = "Allah Dalla";
+
+void uci_loop(){
+
+    init_log();
+    log_message("Initializing engine\n");
+
+    // clear buffers
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+
+    // input buffer
+    char input_buffer[3000];
+
+    // print engine info
+    printf("id name %s\n", engine_name);
+    printf("id author %s\n", engine_author);
+    printf("uciok\n");
+    log_message("Sent initial UCI identification\n");
+
+    // loop
+    while(1){
+        // clear buffer
+        memset(input_buffer, 0, sizeof(input_buffer));
+        // fflush(stdin);
+
+        if(!fgets(input_buffer, 3000, stdin)){
+            continue;
+        }
+
+        log_message("Lucas : %s\n", input_buffer);
+
+        if(input_buffer[0] == '\n'){
+            continue;
+        }
+
+        // parse command
+        if(strncmp(input_buffer, "isready", 7) == 0){
+            // ready
+            printf("readyok\n");
+            log_message("Mahoraga : readyok\n");
+            continue;
+        }
+        
+        if(strncmp(input_buffer, "position", 8) == 0){
+            // parse position
+            parse_position(input_buffer);
+            log_message("Mahoraga : Parsed position command\n");
+            continue;
+        }
+        // parse new game
+        if(strncmp(input_buffer, "ucinewgame", 10) == 0){
+            // new game
+            parse_position("position startpos");
+            log_message("Mahoraga : Parsed new game command\n");
+            continue;
+        }
+
+        // parse go
+        if(strncmp(input_buffer, "go", 2) == 0){
+            // parse go
+            parse_go(input_buffer);
+            log_message("Mahoraga : Parsed go command\n");
+            continue;
+        }
+
+        // parse quit
+        if(strncmp(input_buffer, "quit", 4) == 0){
+            // quit
+            log_message("Mahoraga : Quitting\n");
+            break;
+        }
+
+        if(strncmp(input_buffer, "uci", 3) == 0){
+            // print engine info
+            printf("id name %s\n", engine_name);
+            printf("id author %s\n", engine_author);
+            printf("uciok\n");
+            log_message("Sent initial UCI identification\n");
+            continue;
+        }
+    }
+}
+
 
 /* 
     ********************************************
@@ -2036,6 +2240,17 @@ void parse_position(char *command){
 */
 
 
+/**
+ * Main entry point for the chess engine program.
+ * 
+ * Demonstrates various chess engine functionalities including:
+ * - Parsing FEN positions
+ * - Setting search depth
+ * - Printing the chessboard
+ * 
+ * @note This is a test/development main function with commented-out experimental code
+ * @return Exit status of the program
+ */
 int main(){
     
     initialize_engine();   
@@ -2056,8 +2271,8 @@ int main(){
     // }
     
     
-    parse_position("position startpos moves e2e4");
-    print_chessboard();
+    // parse_position("position startpos moves e2e4");
+    uci_loop();
 
     return 0;
 }
