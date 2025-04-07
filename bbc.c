@@ -15,10 +15,21 @@
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
 
 
-// Add this global variable
+
+/**
+ * Global file pointer for logging messages to a text file.
+ * Initialized to NULL and will be set to a valid file stream when logging is initialized.
+ */
 FILE *log_file = NULL;
 
-// Add this function to initialize logging
+
+/**
+ * Initializes the log file for writing log messages.
+ *
+ * Creates a new log file named "mahoraga_log.txt" in write mode.
+ * If the file cannot be opened, an error message is printed to stderr.
+ * The global log_file pointer is set to the opened file stream.
+ */
 void init_log() {
     log_file = fopen("mahoraga_log.txt", "w");
     if (log_file == NULL) {
@@ -26,14 +37,28 @@ void init_log() {
     }
 }
 
-// Add this function to close the log file
+/**
+ * Closes the log file if it is currently open.
+ *
+ * This function safely closes the global log file, ensuring that any buffered
+ * log messages are written and system resources are properly released.
+ */
 void close_log() {
     if (log_file != NULL) {
         fclose(log_file);
     }
 }
 
-// Add this function to log messages
+/**
+ * Logs a formatted message to the log file.
+ *
+ * Writes a formatted message to the previously initialized log file using variable argument list.
+ * If the log file is not open, no action is taken. Ensures the message is immediately written
+ * to the file by flushing the stream after writing.
+ *
+ * @param format A printf-style format string
+ * @param ... Variable arguments corresponding to the format string
+ */
 void log_message(const char *format, ...) {
     if (log_file != NULL) {
         va_list args;
@@ -1076,9 +1101,24 @@ static inline void add_move(moves *moves_list, int move){
  * @param move The encoded chess move to be printed, containing source square, target square, and potential promoted piece
  * @brief Displays the source and target squares, along with any promoted piece information
  */
-void print_move(int move){
-    printf("[%s, %s, %c]\n", square_to_coordinate[get_source_square(move)], square_to_coordinate[get_target_square(move)], promoted_pieces[get_promoted_piece(move)]);
+char* print_move(int move){
+    static char move_str[10];
+    int promoted = get_promoted_piece(move);
+    
+    if (promoted) {
+        sprintf(move_str, "%s%s%c", 
+            square_to_coordinate[get_source_square(move)], 
+            square_to_coordinate[get_target_square(move)], 
+            promoted_pieces[promoted]);
+    } else {
+        sprintf(move_str, "%s%s", 
+            square_to_coordinate[get_source_square(move)], 
+            square_to_coordinate[get_target_square(move)]);
+    }
+    
+    return move_str;
 }
+
 
 
 // print move_list
@@ -2109,6 +2149,268 @@ void parse_position(char *command){
 
 }
 
+/* 
+    ********************************************
+    *
+    *               EVALUATION
+    * 
+    * 
+    ******************************************** 
+*/
+
+const int material_score[12] = {
+    100, // white pawn
+    300, // white knight
+    350, // white bishop
+    500, // white rook
+    1000, // white queen
+    10000, // white king
+    -100, // black pawn
+    -300, // black knight
+    -350, // black bishop
+    -500, // black rook
+    -1000,// black queen
+    -10000 // black king
+};
+
+// pawn positional score
+const int pawn_score[64] = 
+{
+    90,  90,  90,  90,  90,  90,  90,  90,
+    30,  30,  30,  40,  40,  30,  30,  30,
+    20,  20,  20,  30,  30,  30,  20,  20,
+    10,  10,  10,  20,  20,  10,  10,  10,
+     5,   5,  10,  20,  20,   5,   5,   5,
+     0,   0,   0,   5,   5,   0,   0,   0,
+     0,   0,   0, -10, -10,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0
+};
+
+// knight positional score
+const int knight_score[64] = 
+{
+    -5,   0,   0,   0,   0,   0,   0,  -5,
+    -5,   0,   0,  10,  10,   0,   0,  -5,
+    -5,   5,  20,  20,  20,  20,   5,  -5,
+    -5,  10,  20,  30,  30,  20,  10,  -5,
+    -5,  10,  20,  30,  30,  20,  10,  -5,
+    -5,   5,  20,  10,  10,  20,   5,  -5,
+    -5,   0,   0,   0,   0,   0,   0,  -5,
+    -5, -10,   0,   0,   0,   0, -10,  -5
+};
+
+// bishop positional score
+const int bishop_score[64] = 
+{
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,  10,  10,   0,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,  10,   0,   0,   0,   0,  10,   0,
+     0,  30,   0,   0,   0,   0,  30,   0,
+     0,   0, -10,   0,   0, -10,   0,   0
+
+};
+
+// rook positional score
+const int rook_score[64] =
+{
+    50,  50,  50,  50,  50,  50,  50,  50,
+    50,  50,  50,  50,  50,  50,  50,  50,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,  10,  20,  20,  10,   0,   0,
+     0,   0,   0,  20,  20,   0,   0,   0
+
+};
+
+// king positional score
+const int king_score[64] = 
+{
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   5,   5,   5,   5,   0,   0,
+     0,   5,   5,  10,  10,   5,   5,   0,
+     0,   5,  10,  20,  20,  10,   5,   0,
+     0,   5,  10,  20,  20,  10,   5,   0,
+     0,   0,   5,  10,  10,   5,   0,   0,
+     0,   5,   5,  -5,  -5,   0,   5,   0,
+     0,   0,   5,   0, -15,   0,  10,   0
+};
+
+// mirror positional score tables for opposite side
+const int mirror_score[128] =
+{
+	a1, b1, c1, d1, e1, f1, g1, h1,
+	a2, b2, c2, d2, e2, f2, g2, h2,
+	a3, b3, c3, d3, e3, f3, g3, h3,
+	a4, b4, c4, d4, e4, f4, g4, h4,
+	a5, b5, c5, d5, e5, f5, g5, h5,
+	a6, b6, c6, d6, e6, f6, g6, h6,
+	a7, b7, c7, d7, e7, f7, g7, h7,
+	a8, b8, c8, d8, e8, f8, g8, h8
+};
+
+
+
+static inline int evaluate(){
+    int score = 0;
+    u64 bitboard;
+    int piece, square;
+    // loop over piece bitboards
+    for(int board_piece = P; board_piece <= k; board_piece++){
+        bitboard = piece_bitboards[board_piece];
+        // get piece score
+        while(bitboard){
+            piece = board_piece;
+            square = get_lsb_index(bitboard);
+            // score piece
+            score += material_score[piece];
+
+            // add positional score
+            switch(piece){
+                // evalue white pieces
+                case P:
+                    score += pawn_score[square];
+                    break;
+                case N:
+                    score += knight_score[square];
+                    break;
+                case B:
+                    score += bishop_score[square];
+                    break;
+                case R:
+                    score += rook_score[square];
+                    break;
+                case K:
+                    score += king_score[square];
+                    break;
+                // evalue black pieces
+                case p:
+                    score -= pawn_score[mirror_score[square]];
+                    break;
+                case n:
+                    score -= knight_score[mirror_score[square]];
+                    break;
+                case b:
+                    score -= bishop_score[mirror_score[square]];
+                    break;
+                case r:
+                    score -= rook_score[mirror_score[square]];
+                    break;
+                case k:
+                    score -= king_score[mirror_score[square]];
+                    break;
+            }
+
+            // remove piece from bitboard
+            pop_bit(bitboard, square);
+
+        }
+
+    }
+
+    return (side == white) ? score : -score;
+}
+
+
+
+
+/* 
+    ********************************************
+    *
+    *               SEARCH
+    * 
+    * 
+    ******************************************** 
+*/
+
+// half move counter
+int ply;
+// best move
+int best_move;
+
+/**
+ * Implements the Negamax algorithm for chess move evaluation.
+ * 
+ * Recursively searches game tree to find the best move within given depth,
+ * using alpha-beta pruning to optimize search efficiency. Evaluates moves 
+ * by generating all possible moves, exploring each move's potential score, 
+ * and tracking the best move at the root level.
+ * 
+ * @param alpha Lower bound of the search window
+ * @param beta Upper bound of the search window
+ * @param depth Remaining search depth
+ * @return The best evaluation score for the current position
+ */
+static inline int negamax(int alpha, int beta, int depth){
+    // base condition
+    if(depth == 0){
+        return evaluate();
+    }
+
+
+    int best;
+    int old_alpha = alpha;
+    moves move_list[1];
+    generate_moves(move_list);
+    for(int count = 0; count < move_list->move_count; count++){
+        // init move
+        int move = move_list->move_list[count];
+
+        // preserve board state
+        copy_board();
+
+        // increment ply
+        ply++;
+
+        if(make_move(move, all_moves) == 0){
+            // illegal move
+            ply--;
+            continue;
+        }
+
+        // negamax
+        int score = -negamax(-beta, -alpha, depth - 1);
+        // print_chessboard();
+
+        // restore board
+        restore_board();
+        // decrement ply
+        ply--;
+
+
+        // fail high
+        if(score >= beta){
+            return beta;
+        }
+
+        // fail low
+        if(score > alpha){
+            alpha = score;
+            if(ply == 0){
+                best = move;
+            }
+        }
+    }
+
+    if(old_alpha != alpha){
+        best_move = best;
+    }
+
+    return alpha;
+}
+
+#define INF 1000000
+
+void search(int depth){
+    int score = negamax(-INF, INF, depth);
+    printf("bestmove %s", print_move(best_move));
+    printf("\n");
+}
+
 /**
  * Parses the search depth from a 'go' command.
  * 
@@ -2128,8 +2430,8 @@ void parse_go(char *command){
         // default depth
         depth = 6;
     }
-
-    printf("bestmove e7e6\n");
+    // search
+    search(depth);
 }
 
 /**
@@ -2212,7 +2514,7 @@ void uci_loop(){
         }
 
         // parse quit
-        if(strncmp(input_buffer, "quit", 4) == 0){
+        if(strncmp(input_buffer, "quit", 4) == 0 || strncmp(input_buffer, "stop", 4) == 0){
             // quit
             log_message("Mahoraga : Quitting\n");
             break;
@@ -2228,6 +2530,9 @@ void uci_loop(){
         }
     }
 }
+
+
+
 
 
 /* 
@@ -2254,25 +2559,10 @@ void uci_loop(){
 int main(){
     
     initialize_engine();   
-
-    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
-    // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R w KQkq - 0 1 " - werid position with weird rook attacks
-    // parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R b KQkq - 0 1 ");
-
-    // print_chessboard();
     
-    // int move = parse_move("g2g1q");
-    
-    // if(move){
-    //     make_move(move, all_moves);
-    //     print_chessboard();
-    // }else{
-    //     printf("\nIllegal move\n");
-    // }
-    
-    
-    // parse_position("position startpos moves e2e4");
     uci_loop();
+    printf("Score: %d\n", evaluate());
 
+    
     return 0;
 }
