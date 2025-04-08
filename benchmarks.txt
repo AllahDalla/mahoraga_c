@@ -1,4 +1,4 @@
-Start Position 
+Start Position - No negmax
 --------------------------------------
 Time Elapsed: 78 ms
 Nodes: 20
@@ -11,4 +11,22 @@ Depth: 2
 Time Elapsed: 2766 ms
 Nodes: 4865609
 Depth: 5
+--------------------------------------
+
+
+start position - negmax; alpha beta pruning and quiescence search
+
+Time Elapsed: 0 ms
+Nodes: 8455
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 31 ms
+Nodes: 8407
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 33453 ms
+Nodes: 10564788
+Depth: 6
 --------------------------------------

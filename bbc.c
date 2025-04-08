@@ -1215,7 +1215,6 @@ int make_move(int move, int move_flag){
 
         // handle captures
         if(capture_flag){
-            printf("CAPTURE : Move -> %s\n", print_move(move));
             int start_piece, end_piece;
             if(side == white){
                 start_piece = p;
@@ -2327,13 +2326,136 @@ static inline int evaluate(){
     ******************************************** 
 */
 
+/*
+                          
+    (Victims) Pawn Knight Bishop   Rook  Queen   King
+  (Attackers)
+        Pawn   105    205    305    405    505    605
+      Knight   104    204    304    404    504    604
+      Bishop   103    203    303    403    503    603
+        Rook   102    202    302    402    502    602
+       Queen   101    201    301    401    501    601
+        King   100    200    300    400    500    600
+
+*/
+
+// MVV LVA [attacker][victim]
+/** 
+ * MVV-LVA (Most Valuable Victim - Least Valuable Attacker) scoring table
+ * Used to prioritize captures during move ordering in chess search algorithms
+ * Helps improve search efficiency by ranking captures based on piece values
+ */
+static int mvv_lva[12][12] = {
+    105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+   104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+   103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+   102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+   101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+   100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600,
+
+   105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+   104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+   103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+   102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+   101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+   100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
+};
+
+
 // half move counter
 int ply;
 // best move
 int best_move;
 
 
+/**
+ * Scores a move based on its capture value using MVV-LVA (Most Valuable Victim - Least Valuable Attacker) strategy.
+ * 
+ * For capture moves, identifies the target piece and calculates a capture score
+ * that prioritizes capturing more valuable pieces with less valuable pieces.
+ * 
+ * @param move The chess move to be scored
+ * @return An integer score representing the move's capture priority, or 0 for non-capture moves
+ * 
+ * @note Possible optimization - encode target piece in move encoding for faster lookup
+ * 
+ */
+static inline int score_move(int move)
+{
+    // score capture move
+    if (get_capture(move))
+    {
+        // init target piece
+        int target_piece = P;
+        
+        // bitboard piece index ranges depending on side
+        int start_piece, end_piece;
+        
+        // side to move
+        if (side == white) { start_piece = p; end_piece = k; }
+        else { start_piece = P; end_piece = K; }
+        
+        // loop over bitboards opposite to the current side to move
+        for (int board_piece = start_piece; board_piece <= end_piece; board_piece++)
+        {
+            // if there's a piece on the target square
+            if (get_bit(piece_bitboards[board_piece], get_target_square(move)))
+            {
+                // remove it from bitboard
+                target_piece = board_piece;
+                break;
+            }
+        }
+        printf("Move : %s\n", print_move(move));
+        printf("Source Piece: %s\n", ascii_pieces[get_piece(move)]);
+        printf("Target Piece: %s\n", ascii_pieces[target_piece]);
+
+                
+        // score move by MVV LVA lookup [source piece][target piece]
+        return mvv_lva[get_piece(move)][target_piece];
+    }
+    
+    // score quiet move
+    else
+    {
+        
+    }
+    
+    return 0;
+}
+
+// print move scores
+void print_move_scores(moves *move_list)
+{
+    printf("     Move scores:\n\n");
+        
+    // loop over moves within a move list
+    for (int count = 0; count <= move_list->move_count; count++)
+    {
+        printf("     move: ");
+        print_move(move_list->move_list[count]);
+        printf(" score: %d\n", score_move(move_list->move_list[count]));
+    }
+}
+
+
+
+
+/**
+ * Performs quiescence search to evaluate positions with captures.
+ * 
+ * Recursively explores capture moves to stabilize the static evaluation,
+ * preventing horizon effect by continuing search when position is volatile.
+ * Uses alpha-beta pruning to optimize search efficiency.
+ * 
+ * @param alpha Lower bound of the search window
+ * @param beta Upper bound of the search window
+ * @return The best evaluation score for the current position
+ */
 static inline int q_search(int alpha, int beta){
+
+    // increment nodes
+    nodes++;
 
     int eval = evaluate();
 
@@ -2365,7 +2487,6 @@ static inline int q_search(int alpha, int beta){
             ply--;
             continue;
         }
-        printf("Side %s; Q_Move -> %s\n", (side == white) ? "White": "Black", print_move(move));
 
         // increment nodes
         nodes++;
@@ -2436,7 +2557,6 @@ static inline int negamax(int alpha, int beta, int depth){
             continue;
         }
 
-        printf("Side %s; Move -> %s\n", (side == white) ? "White": "Black", print_move(move));
         // increment nodes
         nodes++;
         // increment legal moves
@@ -2505,8 +2625,7 @@ void search(int depth){
         printf("info score cp %d depth %d nodes %ld\n", score, depth, nodes);
         printf("bestmove %s", print_move(best_move));
         printf("\n");
-        log_message("bestmove %s\n", print_move(best_move));
-        log_message("Score: %d\n", score);
+        log_message("bestmove %s Score: %d\n", print_move(best_move), score);
     }
 }
 
@@ -2518,6 +2637,8 @@ void search(int depth){
  * 
  * @param command The input command string containing search parameters
  */
+
+int global_depth = 0;
 void parse_go(char *command){
     // parse depth
     int depth = 0;
@@ -2529,6 +2650,7 @@ void parse_go(char *command){
         // default depth
         depth = 6;
     }
+    global_depth = depth;
     // search
     search(depth);
 }
@@ -2607,7 +2729,12 @@ void uci_loop(){
         // parse go
         if(strncmp(input_buffer, "go", 2) == 0){
             // parse go
+            int start_time = get_time();
             parse_go(input_buffer);
+            printf("\n\nTime Elapsed: %d ms\n", get_time() - start_time);
+            printf("Nodes: %ld\n", nodes);
+            printf("Depth: %d\n", global_depth);
+            printf("--------------------------------------\n");
             log_message("Mahoraga : Parsed go command\n");
             continue;
         }
@@ -2659,7 +2786,22 @@ int main(){
     
     initialize_engine();   
     
-    uci_loop();
+    int debug = 1;
+    if(debug){
+        // parse position
+        parse_fen(tricky_position);
+        print_chessboard();
+        moves move_list[1];
+        generate_moves(move_list);
+
+        for(int count = 0; count < move_list->move_count; count++){
+
+            score_move(move_list->move_list[count]);
+        }
+
+    }else{
+        uci_loop();
+    }
 
     return 0;
 }
