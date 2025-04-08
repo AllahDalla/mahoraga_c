@@ -1215,6 +1215,7 @@ int make_move(int move, int move_flag){
 
         // handle captures
         if(capture_flag){
+            printf("CAPTURE : Move -> %s\n", print_move(move));
             int start_piece, end_piece;
             if(side == white){
                 start_piece = p;
@@ -1329,12 +1330,11 @@ int make_move(int move, int move_flag){
     }else{
         // check if move is capture
         if(get_capture(move)){
-            make_move(move, all_moves);
+            return make_move(move, all_moves);
         }else{
             return 0;
         }
     }
-    return 0;
 }
 
 
@@ -2332,6 +2332,69 @@ int ply;
 // best move
 int best_move;
 
+
+static inline int q_search(int alpha, int beta){
+
+    int eval = evaluate();
+
+    // fail high
+    if(eval >= beta){
+        return beta;
+    }
+
+    // fail low
+    if(eval > alpha){
+        alpha = eval;
+    }
+
+    moves move_list[1];
+    generate_moves(move_list);
+    for(int count = 0; count < move_list->move_count; count++){
+        // init move
+        int move = move_list->move_list[count];
+
+        // preserve board state
+        copy_board();
+
+        // increment ply
+        ply++;
+
+        
+        if(make_move(move, captures_only) == 0){
+            // illegal move
+            ply--;
+            continue;
+        }
+        printf("Side %s; Q_Move -> %s\n", (side == white) ? "White": "Black", print_move(move));
+
+        // increment nodes
+        nodes++;
+        // increment legal moves
+
+        // negamax
+        int score = -q_search(-beta, -alpha);
+        // print_chessboard();
+
+        // restore board
+        restore_board();
+        // decrement ply
+        ply--;
+
+
+        // fail high
+        if(score >= beta){
+            return beta;
+        }
+
+        // fail low
+        if(score > alpha){
+            alpha = score;
+        }
+    }
+
+    return alpha;
+}
+
 /**
  * Implements the Negamax algorithm for chess move evaluation.
  * 
@@ -2348,10 +2411,11 @@ int best_move;
 static inline int negamax(int alpha, int beta, int depth){
     // base condition
     if(depth == 0){
-        return evaluate();
+        return q_search(alpha, beta);
     }
 
-
+    int in_check = is_square_attacked(get_lsb_index((side == white) ? piece_bitboards[K]:piece_bitboards[k]), (side ^ 1));
+    int legal_moves = 0;
     int best;
     int old_alpha = alpha;
     moves move_list[1];
@@ -2371,6 +2435,12 @@ static inline int negamax(int alpha, int beta, int depth){
             ply--;
             continue;
         }
+
+        printf("Side %s; Move -> %s\n", (side == white) ? "White": "Black", print_move(move));
+        // increment nodes
+        nodes++;
+        // increment legal moves
+        legal_moves++;
 
         // negamax
         int score = -negamax(-beta, -alpha, depth - 1);
@@ -2395,6 +2465,15 @@ static inline int negamax(int alpha, int beta, int depth){
             }
         }
     }
+    // check for checkmate or stalemate
+    if(legal_moves == 0){
+        if(in_check){
+            return -990995 + ply; // checkmate
+        }
+        else{ // stalemate
+            return 0;
+        }
+    }
 
     if(old_alpha != alpha){
         best_move = best;
@@ -2403,12 +2482,32 @@ static inline int negamax(int alpha, int beta, int depth){
     return alpha;
 }
 
+/**
+ * Defines an infinite value used in chess engine search algorithms.
+ * 
+ * Used as a large constant for initializing search bounds in negamax 
+ * and alpha-beta pruning algorithms, representing a theoretically 
+ * unreachable score value.
+ */
 #define INF 1000000
 
+/**
+ * Initiates the chess move search process.
+ * 
+ * Performs a negamax search to a specified depth and prints the best move found.
+ * Uses infinite bounds and the predefined search depth to evaluate possible moves.
+ * 
+ * @param depth The maximum search depth for move evaluation
+ */
 void search(int depth){
     int score = negamax(-INF, INF, depth);
-    printf("bestmove %s", print_move(best_move));
-    printf("\n");
+    if(best_move){
+        printf("info score cp %d depth %d nodes %ld\n", score, depth, nodes);
+        printf("bestmove %s", print_move(best_move));
+        printf("\n");
+        log_message("bestmove %s\n", print_move(best_move));
+        log_message("Score: %d\n", score);
+    }
 }
 
 /**
@@ -2561,8 +2660,6 @@ int main(){
     initialize_engine();   
     
     uci_loop();
-    printf("Score: %d\n", evaluate());
 
-    
     return 0;
 }
