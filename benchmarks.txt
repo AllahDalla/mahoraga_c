@@ -30,3 +30,21 @@ Time Elapsed: 33453 ms
 Nodes: 10564788
 Depth: 6
 --------------------------------------
+
+
+start position (e2e4) - killer moves and history heuristic
+
+Time Elapsed: 16 ms
+Nodes: 20
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 15 ms
+Nodes: 1042
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 625 ms
+Nodes: 61857
+Depth: 6
+--------------------------------------

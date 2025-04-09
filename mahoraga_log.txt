@@ -3,14 +3,17 @@ Sent initial UCI identification
 Lucas : position startpos moves e2e4
 
 Mahoraga : Parsed position command
-Lucas : go depth 3
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 1
 
 bestmove d7d5 Score: 0
 Mahoraga : Parsed go command
 Lucas : position startpos moves e2e4
 
 Mahoraga : Parsed position command
-Lucas : go depth 1
+Lucas : go depth 3
 
 bestmove d7d5 Score: 0
 Mahoraga : Parsed go command
@@ -21,6 +24,3 @@ Lucas : go depth 6
 
 bestmove b8c6 Score: -20
 Mahoraga : Parsed go command
-Lucas : quit
-
-Mahoraga : Quitting

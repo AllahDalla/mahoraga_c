@@ -1095,11 +1095,15 @@ static inline void add_move(moves *moves_list, int move){
 
 
 // print move
+
 /**
- * Prints the details of an encoded chess move.
+ * Converts an encoded chess move to a human-readable string representation.
  * 
- * @param move The encoded chess move to be printed, containing source square, target square, and potential promoted piece
- * @brief Displays the source and target squares, along with any promoted piece information
+ * Generates a string in algebraic notation, including the source and target squares.
+ * For promotion moves, appends the promoted piece character.
+ * 
+ * @param move The encoded chess move to convert
+ * @return A static string representing the move in chess notation
  */
 char* print_move(int move){
     static char move_str[10];
@@ -2005,6 +2009,8 @@ void perft(int depth){
             continue;
         }
 
+        // printf("Move : %s ", print_move(move));
+
         long cummalative_nodes = nodes;
 
         perf_driver(depth - 1);
@@ -2366,6 +2372,10 @@ static int mvv_lva[12][12] = {
 int ply;
 // best move
 int best_move;
+// killer moves
+int killer_moves[2][64];
+// history moves
+int history_moves[12][64];
 
 
 /**
@@ -2406,22 +2416,49 @@ static inline int score_move(int move)
                 break;
             }
         }
-        printf("Move : %s\n", print_move(move));
-        printf("Source Piece: %s\n", ascii_pieces[get_piece(move)]);
-        printf("Target Piece: %s\n", ascii_pieces[target_piece]);
-
                 
         // score move by MVV LVA lookup [source piece][target piece]
-        return mvv_lva[get_piece(move)][target_piece];
+        return mvv_lva[get_piece(move)][target_piece] + 10000;
     }
     
     // score quiet move
     else
     {
-        
+        // score 1st killer move
+        if(killer_moves[0][ply] == move){
+            return 9000;
+        }else if(killer_moves[1][ply] == move){
+            return 8000;
+        }else{
+            return history_moves[get_piece(move)][get_target_square(move)];
+        }
     }
     
     return 0;
+}
+
+
+static inline int sort_moves(moves *move_list){
+    int move_scores[300]; // using a bit more than max moves
+    for(int count = 0; count <= move_list->move_count; count++){
+        move_scores[count] = score_move(move_list->move_list[count]);
+    }
+
+    // sort moves by score
+    for(int current = 0; current < move_list->move_count; current++){
+        for(int next = current + 1; next < move_list->move_count; next++){
+            if(move_scores[current] < move_scores[next]){
+
+                int temp = move_scores[current];
+                move_scores[current] = move_scores[next];
+                move_scores[next] = temp;
+
+                int temp2 = move_list->move_list[current];
+                move_list->move_list[current] = move_list->move_list[next];
+                move_list->move_list[next] = temp2;
+            }
+        }
+    }
 }
 
 // print move scores
@@ -2430,10 +2467,10 @@ void print_move_scores(moves *move_list)
     printf("     Move scores:\n\n");
         
     // loop over moves within a move list
-    for (int count = 0; count <= move_list->move_count; count++)
+    for (int count = 0; count < move_list->move_count; count++)
     {
         printf("     move: ");
-        print_move(move_list->move_list[count]);
+        printf("%s", print_move(move_list->move_list[count]));
         printf(" score: %d\n", score_move(move_list->move_list[count]));
     }
 }
@@ -2455,7 +2492,7 @@ void print_move_scores(moves *move_list)
 static inline int q_search(int alpha, int beta){
 
     // increment nodes
-    nodes++;
+    // nodes++;
 
     int eval = evaluate();
 
@@ -2471,6 +2508,7 @@ static inline int q_search(int alpha, int beta){
 
     moves move_list[1];
     generate_moves(move_list);
+    sort_moves(move_list);
     for(int count = 0; count < move_list->move_count; count++){
         // init move
         int move = move_list->move_list[count];
@@ -2487,10 +2525,6 @@ static inline int q_search(int alpha, int beta){
             ply--;
             continue;
         }
-
-        // increment nodes
-        nodes++;
-        // increment legal moves
 
         // negamax
         int score = -q_search(-beta, -alpha);
@@ -2541,6 +2575,7 @@ static inline int negamax(int alpha, int beta, int depth){
     int old_alpha = alpha;
     moves move_list[1];
     generate_moves(move_list);
+    sort_moves(move_list);
     for(int count = 0; count < move_list->move_count; count++){
         // init move
         int move = move_list->move_list[count];
@@ -2574,11 +2609,20 @@ static inline int negamax(int alpha, int beta, int depth){
 
         // fail high
         if(score >= beta){
+            // store killer moves
+            if(get_capture(move) == 0){
+                killer_moves[1][ply] = killer_moves[0][ply];
+                killer_moves[0][ply] = move;
+            }
             return beta;
         }
 
         // fail low
         if(score > alpha){
+            // store history moves
+            if(get_capture(move) == 0){
+                history_moves[get_piece(move)][get_target_square(move)] += depth;
+            }
             alpha = score;
             if(ply == 0){
                 best = move;
@@ -2788,17 +2832,9 @@ int main(){
     
     int debug = 1;
     if(debug){
-        // parse position
         parse_fen(tricky_position);
         print_chessboard();
-        moves move_list[1];
-        generate_moves(move_list);
-
-        for(int count = 0; count < move_list->move_count; count++){
-
-            score_move(move_list->move_list[count]);
-        }
-
+        search(5);
     }else{
         uci_loop();
     }
