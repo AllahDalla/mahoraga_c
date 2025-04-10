@@ -48,3 +48,20 @@ Time Elapsed: 625 ms
 Nodes: 61857
 Depth: 6
 --------------------------------------
+
+start position (e4e5) - pv table, iterative deepening
+
+Time Elapsed: 15 ms
+Nodes: 20
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 31 ms
+Nodes: 687
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 1266 ms
+Nodes: 137515
+Depth: 6
+--------------------------------------
