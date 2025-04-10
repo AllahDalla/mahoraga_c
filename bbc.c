@@ -2367,16 +2367,35 @@ static int mvv_lva[12][12] = {
    100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
 };
 
+// max ply
+#define MAX_PLY 64
 
 // half move counter
 int ply;
-// best move
-int best_move;
 // killer moves
-int killer_moves[2][64];
+int killer_moves[2][MAX_PLY];
 // history moves
-int history_moves[12][64];
+int history_moves[12][64]; // [piece][square]
 
+// pv length
+int pv_length[MAX_PLY];
+// pv table
+int pv_table[MAX_PLY][MAX_PLY];
+
+// declare follow pv and score pv flags
+int follow_pv, score_pv;
+
+
+static inline void pv_scoring(moves *move_list){
+    follow_pv = 0;
+
+    for(int count = 0; count < move_list->move_count; count++){
+        if(pv_table[0][ply] == move_list->move_list[count]){
+            score_pv = 1;
+            follow_pv = 1;
+        }
+    }
+}
 
 /**
  * Scores a move based on its capture value using MVV-LVA (Most Valuable Victim - Least Valuable Attacker) strategy.
@@ -2392,6 +2411,15 @@ int history_moves[12][64];
  */
 static inline int score_move(int move)
 {
+
+    // PV variation scoring
+    if(score_pv){
+        if(pv_table[0][ply] == move){
+            score_pv = 0;
+            return 20000;
+        }
+    }
+
     // score capture move
     if (get_capture(move))
     {
@@ -2564,17 +2592,29 @@ static inline int q_search(int alpha, int beta){
  * @return The best evaluation score for the current position
  */
 static inline int negamax(int alpha, int beta, int depth){
+
+    // init PV length
+    pv_length[ply] = ply;
+
     // base condition
     if(depth == 0){
         return q_search(alpha, beta);
     }
 
+    // overflow for large depths
+    if(ply > MAX_PLY - 1){
+        return evaluate();
+    }
+
     int in_check = is_square_attacked(get_lsb_index((side == white) ? piece_bitboards[K]:piece_bitboards[k]), (side ^ 1));
+    if(in_check)depth++;
+
     int legal_moves = 0;
-    int best;
-    int old_alpha = alpha;
     moves move_list[1];
     generate_moves(move_list);
+
+    if(follow_pv)pv_scoring(move_list);
+
     sort_moves(move_list);
     for(int count = 0; count < move_list->move_count; count++){
         // init move
@@ -2619,14 +2659,22 @@ static inline int negamax(int alpha, int beta, int depth){
 
         // fail low
         if(score > alpha){
+
+            // write PV move
+            pv_table[ply][ply] = move;
+            for(int next = ply + 1; next < pv_length[ply + 1]; next++){
+                // write next PV move
+                pv_table[ply][next] = pv_table[ply + 1][next];
+            }
+
+            // update PV length
+            pv_length[ply] = pv_length[ply + 1];
+
             // store history moves
             if(get_capture(move) == 0){
                 history_moves[get_piece(move)][get_target_square(move)] += depth;
             }
             alpha = score;
-            if(ply == 0){
-                best = move;
-            }
         }
     }
     // check for checkmate or stalemate
@@ -2637,10 +2685,6 @@ static inline int negamax(int alpha, int beta, int depth){
         else{ // stalemate
             return 0;
         }
-    }
-
-    if(old_alpha != alpha){
-        best_move = best;
     }
 
     return alpha;
@@ -2664,13 +2708,33 @@ static inline int negamax(int alpha, int beta, int depth){
  * @param depth The maximum search depth for move evaluation
  */
 void search(int depth){
-    int score = negamax(-INF, INF, depth);
-    if(best_move){
-        printf("info score cp %d depth %d nodes %ld\n", score, depth, nodes);
-        printf("bestmove %s", print_move(best_move));
+
+    // reset nodes and data structures
+    nodes = 0;
+    follow_pv = 0;
+    score_pv = 0;
+    memset(history_moves, 0, sizeof(history_moves));
+    memset(killer_moves, 0, sizeof(killer_moves));
+    memset(pv_table, 0, sizeof(pv_table));
+    memset(pv_length, 0, sizeof(pv_length));
+
+    int score = 0;
+    for(int current_depth = 1; current_depth <= depth; current_depth++){
+        nodes = 0;
+        follow_pv = 1;
+        score = negamax(-INF, INF, current_depth);
+        
+        printf("info score cp %d depth %d nodes %ld pv ", score, current_depth, nodes);
+        for(int count = 0; count < pv_length[0]; count++){
+            printf("%s ", print_move(pv_table[0][count]));
+        }
         printf("\n");
-        log_message("bestmove %s Score: %d\n", print_move(best_move), score);
     }
+
+    printf("bestmove %s", print_move(pv_table[0][0]));
+    printf("\n");
+    log_message("bestmove %s Score: %d\n", print_move(pv_table[0][0]), score);
+    
 }
 
 /**
@@ -2830,11 +2894,11 @@ int main(){
     
     initialize_engine();   
     
-    int debug = 1;
+    int debug = 0;
     if(debug){
         parse_fen(tricky_position);
         print_chessboard();
-        search(5);
+        search(6);
     }else{
         uci_loop();
     }
