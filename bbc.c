@@ -71,10 +71,6 @@ void log_message(const char *format, ...) {
 
 
 
-
-
-
-
 /**
  * Retrieves the current system tick count in milliseconds.
  *
@@ -2596,9 +2592,6 @@ const int reduction_limit = 3;
  */
 static inline int negamax(int alpha, int beta, int depth){
 
-    // found pv node flag
-    int found_pv = 0;
-
     // init PV length
     pv_length[ply] = ply;
 
@@ -2661,32 +2654,23 @@ static inline int negamax(int alpha, int beta, int depth){
         
         // negamax
         int score = 0; 
-
-        // implement pv search optimization
-        if(found_pv){ // found pv node
-            score = -negamax(-alpha - 1, -alpha, depth - 1); //  search a closed window around alpha
-            if((score > alpha) && (score < beta)){ // if the score fails high but falls under beta, re-search the entire window (do full search)
-                score = -negamax(-beta, -alpha, depth - 1); // normal search
-            }
+        
+        if(moves_searched == 0){
+            score = -negamax(-beta, -alpha, depth - 1); // normal search if no pv node found and moves searched is 0
         }else{
-            if(moves_searched == 0){
-                score = -negamax(-beta, -alpha, depth - 1); // normal search if no pv node found and moves searched is 0
+            if(moves_searched >= full_depth_moves && depth >= reduction_limit && in_check == 0 && get_capture(move) == 0 && get_promoted_piece(move) == 0){
+                score = -negamax(-alpha - 1, -alpha, depth - 2); // reduced search
             }else{
-                if(moves_searched >= full_depth_moves && depth >= reduction_limit && in_check == 0 && get_capture(move) == 0 && get_promoted_piece(move) == 0){
-                    score = -negamax(-alpha - 1, -alpha, depth - 2); // reduced search
-                }else{
-                    score = alpha + 1;
-                }
+                score = alpha + 1;
+            }
 
-                if(score > alpha){
-                    score = -negamax(-alpha - 1, -alpha, depth - 1); // search a closed window around alpha
-                    if(score > alpha && score < beta){
-                        score = -negamax(-beta, -alpha, depth - 1); // normal search
-                    }
+            if(score > alpha){
+                score = -negamax(-alpha - 1, -alpha, depth - 1); // search a closed window around alpha
+                if(score > alpha && score < beta){ // if the score fails high but falls under beta, re-search the entire window (do full search)
+                    score = -negamax(-beta, -alpha, depth - 1); // normal search
                 }
             }
         }
-        
 
         // restore board
         restore_board();
@@ -2724,8 +2708,7 @@ static inline int negamax(int alpha, int beta, int depth){
                 history_moves[get_piece(move)][get_target_square(move)] += depth;
             }
             alpha = score;
-            // found pv node
-            found_pv = 1;
+            
         }
     }
     // check for checkmate or stalemate
@@ -2768,12 +2751,23 @@ void search(int depth){
     memset(killer_moves, 0, sizeof(killer_moves));
     memset(pv_table, 0, sizeof(pv_table));
     memset(pv_length, 0, sizeof(pv_length));
+    int alpha = -INF;
+    int beta = INF;
 
     int score = 0;
     for(int current_depth = 1; current_depth <= depth; current_depth++){
         nodes = 0;
         follow_pv = 1;
-        score = negamax(-INF, INF, current_depth);
+        score = negamax(alpha, beta, current_depth);
+
+        // aspiration window
+        if((score <= alpha) || (score >= beta)){
+            alpha = -INF;
+            beta = INF;
+        }
+        // narrow aspiration window
+        alpha = score - 50;
+        beta = score + 50;
         
         printf("info score cp %d depth %d nodes %ld pv ", score, current_depth, nodes);
         for(int count = 0; count < pv_length[0]; count++){
@@ -2949,7 +2943,7 @@ int main(){
     if(debug){
         parse_fen(tricky_position);
         print_chessboard();
-        search(6);
+        search(9);
     }else{
         uci_loop();
     }

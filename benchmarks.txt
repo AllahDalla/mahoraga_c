@@ -99,3 +99,20 @@ Time Elapsed: 4453 ms
 Nodes: 238568
 Depth: 6
 --------------------------------------
+
+tricky position (r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ) - pv search optimization (duplication fixed), LMR,  aspiration window optimization
+
+Time Elapsed: 16 ms
+Nodes: 48
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 47 ms
+Nodes: 540
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 906 ms
+Nodes: 40938
+Depth: 6
+--------------------------------------
