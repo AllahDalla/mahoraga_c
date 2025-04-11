@@ -65,3 +65,37 @@ Time Elapsed: 1266 ms
 Nodes: 137515
 Depth: 6
 --------------------------------------
+
+start position (e4e5) - pv search optimization - position used does not show improvement
+
+Time Elapsed: 0 ms
+Nodes: 20
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 32 ms
+Nodes: 625
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 1344 ms
+Nodes: 164436
+Depth: 6
+--------------------------------------
+
+tricky position (r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ) - pv search optimization
+
+without pv search op:
+
+Time Elapsed: 5812 ms
+Nodes: 281526
+Depth: 6
+--------------------------------------
+
+
+with pv search op:
+
+Time Elapsed: 4453 ms
+Nodes: 238568
+Depth: 6
+--------------------------------------

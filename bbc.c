@@ -2578,6 +2578,9 @@ static inline int q_search(int alpha, int beta){
     return alpha;
 }
 
+const int full_depth_moves = 4;
+const int reduction_limit = 3;
+
 /**
  * Implements the Negamax algorithm for chess move evaluation.
  * 
@@ -2592,6 +2595,9 @@ static inline int q_search(int alpha, int beta){
  * @return The best evaluation score for the current position
  */
 static inline int negamax(int alpha, int beta, int depth){
+
+    // found pv node flag
+    int found_pv = 0;
 
     // init PV length
     pv_length[ply] = ply;
@@ -2610,12 +2616,28 @@ static inline int negamax(int alpha, int beta, int depth){
     if(in_check)depth++;
 
     int legal_moves = 0;
+
+    // null move check
+    if(depth >= 3 && in_check == 0 && ply){
+        copy_board();
+        side ^= 1; // give opponent a free move
+        enpassant = no_sq;
+        // reduced search (depth - 1 - R where R is reduction limit)
+        int score = -negamax(-beta, -beta + 1, depth - 1 - 2);
+        restore_board();
+        if(score >= beta){
+            return beta;
+        }
+    }
+
     moves move_list[1];
     generate_moves(move_list);
 
     if(follow_pv)pv_scoring(move_list);
 
     sort_moves(move_list);
+    // number of moves searched in move list
+    int moves_searched = 0;
     for(int count = 0; count < move_list->move_count; count++){
         // init move
         int move = move_list->move_list[count];
@@ -2636,16 +2658,43 @@ static inline int negamax(int alpha, int beta, int depth){
         nodes++;
         // increment legal moves
         legal_moves++;
-
+        
         // negamax
-        int score = -negamax(-beta, -alpha, depth - 1);
-        // print_chessboard();
+        int score = 0; 
+
+        // implement pv search optimization
+        if(found_pv){ // found pv node
+            score = -negamax(-alpha - 1, -alpha, depth - 1); //  search a closed window around alpha
+            if((score > alpha) && (score < beta)){ // if the score fails high but falls under beta, re-search the entire window (do full search)
+                score = -negamax(-beta, -alpha, depth - 1); // normal search
+            }
+        }else{
+            if(moves_searched == 0){
+                score = -negamax(-beta, -alpha, depth - 1); // normal search if no pv node found and moves searched is 0
+            }else{
+                if(moves_searched >= full_depth_moves && depth >= reduction_limit && in_check == 0 && get_capture(move) == 0 && get_promoted_piece(move) == 0){
+                    score = -negamax(-alpha - 1, -alpha, depth - 2); // reduced search
+                }else{
+                    score = alpha + 1;
+                }
+
+                if(score > alpha){
+                    score = -negamax(-alpha - 1, -alpha, depth - 1); // search a closed window around alpha
+                    if(score > alpha && score < beta){
+                        score = -negamax(-beta, -alpha, depth - 1); // normal search
+                    }
+                }
+            }
+        }
+        
 
         // restore board
         restore_board();
         // decrement ply
         ply--;
 
+        // increment the counter for the number of moves searched
+        moves_searched++;
 
         // fail high
         if(score >= beta){
@@ -2675,6 +2724,8 @@ static inline int negamax(int alpha, int beta, int depth){
                 history_moves[get_piece(move)][get_target_square(move)] += depth;
             }
             alpha = score;
+            // found pv node
+            found_pv = 1;
         }
     }
     // check for checkmate or stalemate
