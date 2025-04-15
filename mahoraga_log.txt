@@ -1,26 +1,2 @@
 Initializing engine
 Sent initial UCI identification
-Lucas : position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 
-
-Mahoraga : Parsed position command
-Lucas : go depth 1
-
-bestmove e2a6 Score: 30
-Mahoraga : Parsed go command
-Lucas : position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 
-
-Mahoraga : Parsed position command
-Lucas : go depth 3
-
-bestmove e2a6 Score: 15
-Mahoraga : Parsed go command
-Lucas : position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 
-
-Mahoraga : Parsed position command
-Lucas : go depth 6
-
-bestmove e2a6 Score: 0
-Mahoraga : Parsed go command
-Lucas : quit
-
-Mahoraga : Quitting
