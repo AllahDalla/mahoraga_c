@@ -2506,8 +2506,10 @@ static inline int evaluate(){
     * 
     ******************************************** 
 */
-
+// size of  transposition table in bytes
 #define t_table_size 0x400000 // 4mb
+// no hash entry found
+#define no_hash_found 200000
 
 
 /** 
@@ -2552,6 +2554,43 @@ t_table transposition_table[t_table_size];
  */
 void clear_table() {
     memset(transposition_table, 0, sizeof(transposition_table));
+}
+
+/** 
+ * Probes the transposition table to retrieve a previously computed score for a board position
+ * 
+ * Checks if a hash entry exists with a matching key and sufficient search depth
+ * Returns the stored score based on the hash entry's flag (exact, alpha, or beta)
+ * 
+ * @param alpha   Lower bound of the search window
+ * @param beta    Upper bound of the search window
+ * @param depth   Current search depth
+ * @return        Stored score if a valid hash entry is found, otherwise no_hash_found
+ */
+static inline int probe_table(int alpha, int beta, int depth){
+
+    t_table *hash_entry = &transposition_table[hash_key % t_table_size];
+    if(hash_entry->key == hash_key && hash_entry->depth >= depth){
+        if(hash_entry->flag == hashfEXACT){
+            return hash_entry->score;
+        }
+        if(hash_entry->flag == hashfALPHA && hash_entry->score <= alpha){
+            return alpha;
+        }
+        if(hash_entry->flag == hashfBETA && hash_entry->score >= beta){
+            return beta;
+        }
+    }
+    return no_hash_found;
+}
+
+
+static inline void write_table(int score, int depth, int flag){
+    t_table *hash_entry = &transposition_table[hash_key % t_table_size];
+    hash_entry->key = hash_key;
+    hash_entry->depth = depth;
+    hash_entry->flag = flag;
+    hash_entry->score = score;
 }
 
 
@@ -3188,8 +3227,13 @@ int main(){
     if(debug){
         parse_fen(start_position);
         print_chessboard();
-        // search(9);
-        perft(6);
+        // search(4);
+        // perft(6);
+
+        clear_table();
+        write_table(18, 1, hashfALPHA);
+        int score = probe_table(20, 30, 3);
+        printf("Score: %d\n", score);
 
 
     }else{
