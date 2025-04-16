@@ -2585,6 +2585,16 @@ static inline int probe_table(int alpha, int beta, int depth){
 }
 
 
+/** 
+ * Writes a board position evaluation to the transposition table
+ * 
+ * Stores a computed score for a specific board position in the hash table
+ * Allows quick retrieval of previously evaluated positions during search
+ * 
+ * @param score   Evaluation score for the board position
+ * @param depth   Search depth at which the score was computed
+ * @param flag    Type of score stored (exact, alpha, or beta cutoff)
+ */
 static inline void write_table(int score, int depth, int flag){
     t_table *hash_entry = &transposition_table[hash_key % t_table_size];
     hash_entry->key = hash_key;
@@ -2878,6 +2888,16 @@ const int reduction_limit = 3;
  */
 static inline int negamax(int alpha, int beta, int depth){
 
+    // score for each move
+    int score = 0; 
+
+    int hashf = hashfALPHA;
+
+    if((score = probe_table(alpha, beta, depth)) != no_hash_found){
+        return score;
+    }
+
+
     // init PV length
     pv_length[ply] = ply;
 
@@ -2938,8 +2958,6 @@ static inline int negamax(int alpha, int beta, int depth){
         // increment legal moves
         legal_moves++;
         
-        // negamax
-        int score = 0; 
         
         if(moves_searched == 0){
             score = -negamax(-beta, -alpha, depth - 1); // normal search if no pv node found and moves searched is 0
@@ -2968,17 +2986,22 @@ static inline int negamax(int alpha, int beta, int depth){
 
         // fail high
         if(score >= beta){
+
+            // store hash entry for fail high (beta cutoff)
+            write_table(beta, depth, hashfBETA); 
             // store killer moves
             if(get_capture(move) == 0){
                 killer_moves[1][ply] = killer_moves[0][ply];
                 killer_moves[0][ply] = move;
             }
-            return beta;
+            return beta;    
         }
 
         // fail low
         if(score > alpha){
 
+            // switch hash flag to exact
+            hashf = hashfEXACT;
             // write PV move
             pv_table[ply][ply] = move;
             for(int next = ply + 1; next < pv_length[ply + 1]; next++){
@@ -3006,6 +3029,9 @@ static inline int negamax(int alpha, int beta, int depth){
             return 0;
         }
     }
+
+    // store hash entry for fail low (alpha cutoff)
+    write_table(alpha, depth, hashf);
 
     return alpha;
 }
@@ -3225,16 +3251,9 @@ int main(){
     
     int debug = 1;
     if(debug){
-        parse_fen(start_position);
+        parse_fen(tricky_position);
         print_chessboard();
-        // search(4);
-        // perft(6);
-
-        clear_table();
-        write_table(18, 1, hashfALPHA);
-        int score = probe_table(20, 30, 3);
-        printf("Score: %d\n", score);
-
+        search(7);
 
     }else{
         uci_loop();
