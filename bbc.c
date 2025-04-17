@@ -2070,21 +2070,6 @@ void init_slider_attacks(int isBishop){
 
 
 
-/**
- * Initializes the chess engine by setting up attack tables and magic bitboards.
- * 
- * This function prepares the engine for chess move generation by:
- * - Initializing leaper piece attack patterns
- * - Generating magic numbers for slider pieces (bishops and rooks)
- * - Precomputing attack tables for bishops and rooks
- */
-void initialize_engine(){
-    init_leaper_attacks();
-    // init_magics();
-    init_slider_attacks(bishop);
-    init_slider_attacks(rook);
-    init_random_keys(); // for hash table
-}
 
 
 /* 
@@ -2814,6 +2799,11 @@ static inline int q_search(int alpha, int beta){
     // increment nodes
     // nodes++;
 
+    // overflow for large depths
+    if(ply > MAX_PLY - 1){
+        return evaluate();
+    }
+
     int eval = evaluate();
 
     // fail high
@@ -2856,14 +2846,14 @@ static inline int q_search(int alpha, int beta){
         ply--;
 
 
-        // fail high
-        if(score >= beta){
-            return beta;
-        }
-
+        
         // fail low
         if(score > alpha){
             alpha = score;
+            // fail high
+            if(score >= beta){
+                return beta;
+            }
         }
     }
 
@@ -2893,7 +2883,7 @@ static inline int negamax(int alpha, int beta, int depth){
 
     int hashf = hashfALPHA;
 
-    if((score = probe_table(alpha, beta, depth)) != no_hash_found){
+    if(ply && ((score = probe_table(alpha, beta, depth)) != no_hash_found)){
         return score;
     }
 
@@ -2919,10 +2909,17 @@ static inline int negamax(int alpha, int beta, int depth){
     // null move check
     if(depth >= 3 && in_check == 0 && ply){
         copy_board();
-        side ^= 1; // give opponent a free move
+        // increment ply
+        ply++;
+        if(enpassant != no_sq) hash_key ^= enpassant_keys[enpassant]; // hash enpassant for null move pruning
         enpassant = no_sq;
+        side ^= 1; // give opponent a free move
+        hash_key ^= side_key; // hash side for null move pruning
+
         // reduced search (depth - 1 - R where R is reduction limit)
         int score = -negamax(-beta, -beta + 1, depth - 1 - 2);
+        // decrement ply
+        ply--;
         restore_board();
         if(score >= beta){
             return beta;
@@ -2984,22 +2981,10 @@ static inline int negamax(int alpha, int beta, int depth){
         // increment the counter for the number of moves searched
         moves_searched++;
 
-        // fail high
-        if(score >= beta){
-
-            // store hash entry for fail high (beta cutoff)
-            write_table(beta, depth, hashfBETA); 
-            // store killer moves
-            if(get_capture(move) == 0){
-                killer_moves[1][ply] = killer_moves[0][ply];
-                killer_moves[0][ply] = move;
-            }
-            return beta;    
-        }
-
+        
         // fail low
         if(score > alpha){
-
+            
             // switch hash flag to exact
             hashf = hashfEXACT;
             // write PV move
@@ -3008,16 +2993,28 @@ static inline int negamax(int alpha, int beta, int depth){
                 // write next PV move
                 pv_table[ply][next] = pv_table[ply + 1][next];
             }
-
+            
             // update PV length
             pv_length[ply] = pv_length[ply + 1];
-
+            
             // store history moves
             if(get_capture(move) == 0){
                 history_moves[get_piece(move)][get_target_square(move)] += depth;
             }
             alpha = score;
             
+            // fail high
+            if(score >= beta){
+    
+                // store hash entry for fail high (beta cutoff)
+                write_table(beta, depth, hashfBETA); 
+                // store killer moves
+                if(get_capture(move) == 0){
+                    killer_moves[1][ply] = killer_moves[0][ply];
+                    killer_moves[0][ply] = move;
+                }
+                return beta;    
+            }
         }
     }
     // check for checkmate or stalemate
@@ -3186,6 +3183,7 @@ void uci_loop(){
         // parse new game
         if(strncmp(input_buffer, "ucinewgame", 10) == 0){
             // new game
+            clear_table(); // clear hash table
             parse_position("position startpos");
             log_message("Mahoraga : Parsed new game command\n");
             continue;
@@ -3223,6 +3221,26 @@ void uci_loop(){
 }
 
 
+/**
+ * Initializes the chess engine by setting up attack tables and magic bitboards.
+ * 
+ * This function prepares the engine for chess move generation by:
+ * - Initializing leaper piece attack patterns
+ * - Generating magic numbers for slider pieces (bishops and rooks)
+ * - Precomputing attack tables for bishops and rooks
+ */
+void initialize_engine(){
+    init_leaper_attacks();
+    // init_magics();
+    init_slider_attacks(bishop);
+    init_slider_attacks(rook);
+    init_random_keys(); // for hash table
+    clear_table(); // clear hash table
+
+}
+
+
+
 
 /* 
     ********************************************
@@ -3249,10 +3267,17 @@ int main(){
     
     initialize_engine();   
     
-    int debug = 1;
+    int debug = 0;
     if(debug){
         parse_fen(tricky_position);
         print_chessboard();
+        search(7);
+        moves move_list[1];
+        generate_moves(move_list);
+        make_move(move_list->move_list[0] , all_moves);
+        search(7);
+        generate_moves(move_list);
+        make_move(move_list->move_list[0] , all_moves);
         search(7);
 
     }else{
