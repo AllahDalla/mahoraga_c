@@ -1499,15 +1499,15 @@ int make_move(int move, int move_flag){
         hash_key ^= side_key;
 
         // debug hash key generation
-        u64 hash_debug = generate_hash_key();
+        // u64 hash_debug = generate_hash_key();
 
-        if(hash_key != hash_debug){
-            print_chessboard();
-            printf("Hash key mismatch! >>MAKE MOVE : %s <<\n", print_move(move));
-            printf("Hash key: %llx\n", hash_key);
-            printf("Hash debug: %llx\n", hash_debug);
-            getchar();
-        }    
+        // if(hash_key != hash_debug){
+        //     print_chessboard();
+        //     printf("Hash key mismatch! >>MAKE MOVE : %s <<\n", print_move(move));
+        //     printf("Hash key: %llx\n", hash_key);
+        //     printf("Hash debug: %llx\n", hash_debug);
+        //     getchar();
+        // }    
 
         if(side == white){
             int square_index = get_lsb_index(piece_bitboards[k]); // get index of black king
@@ -2577,20 +2577,6 @@ static inline int probe_table(int alpha, int beta, int depth){
             score -= ply;
         }
 
-
-        if(abs(score) >=  48000){
-            // printf("Retrieved mate score from TT: %d, Depth: %d, Flag: %d\n", 
-                // hash_entry->score, hash_entry->depth, hash_entry->flag);
-        }
-
-        // debug
-        // if(score < -MATE_SCORE) score -= ply;
-        // if(score > MATE_SCORE) score += ply;
-
-        // cmk
-        // if (score < -mate_score) score += ply;
-        // if (score > mate_score) score -= ply;
-
         if(hash_entry->flag == hashfEXACT){
             return score;
         }
@@ -2625,23 +2611,6 @@ static inline void write_table(int score, int depth, int flag){
         score += ply;
     }
 
-    // debug 
-    // if(score < -MATE_SCORE) score += ply;
-    // if(score > MATE_SCORE) score -= ply;
-
-    if(abs(hash_entry->score) > 48000 && hash_entry->key != 0) {
-        // printf("WARNING: Overwriting mate score %d with %d at depth %d\n", 
-            //    hash_entry->score, score, depth);
-    }
-
-    if(abs(score) >= 48000){
-        // printf("Writing mate score to TT: %d, Depth: %d, Flag: %d\n",
-            // score, depth, flag);
-    }
-
-    // cmk
-    // if (score < -mate_score) score -= ply;
-    // if (score > mate_score) score += ply;
     
     hash_entry->key = hash_key;
     hash_entry->depth = depth;
@@ -3087,7 +3056,6 @@ static inline int negamax(int alpha, int beta, int depth){
     // check for checkmate or stalemate
     if(legal_moves == 0){
         if(in_check){
-            // printf("Found mate! Score: %d, Depth: %d, Ply: %d\n", (-MATE_VALUE + ply), depth, ply);
             return -MATE_VALUE + ply; // checkmate
         }
         else{ // stalemate
@@ -3245,7 +3213,7 @@ void uci_loop(){
         if(strncmp(input_buffer, "position", 8) == 0){
             // parse position
             parse_position(input_buffer);
-            print_chessboard();
+            // print_chessboard();
             log_message("Mahoraga : Parsed position command\n");
             continue;
         }

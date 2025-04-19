@@ -1,77 +1,9 @@
 Initializing engine
 Sent initial UCI identification
-Lucas : uci
-
-Sent initial UCI identification
-Lucas : ucinewgame
-
-Mahoraga : Parsed new game command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : ucinewgame
-
-Mahoraga : Parsed new game command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1
+Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6f6 c2d3 f6g7
 
 Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
 Lucas : go depth 21
 
-bestmove c1c2 Score: 1025
-Mahoraga : Parsed go command
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6h5
-
-Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : go depth 21
-
-bestmove a8g8 Score: 48991
-Mahoraga : Parsed go command
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6h5 a8g8 h5h6
-
-Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : go depth 21
-
-bestmove c2d3 Score: 48993
-Mahoraga : Parsed go command
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6h5 a8g8 h5h6 c2d3 h6h5
-
-Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : go depth 21
-
-bestmove d3e4 Score: 48995
-Mahoraga : Parsed go command
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6h5 a8g8 h5h6 c2d3 h6h5 d3e4 h5h6
-
-Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : go depth 21
-
-bestmove e4f5 Score: 48997
-Mahoraga : Parsed go command
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6h5 a8g8 h5h6 c2d3 h6h5 d3e4 h5h6 e4f5 h6h5
-
-Mahoraga : Parsed position command
-Lucas : isready
-
-Mahoraga : readyok
-Lucas : go depth 21
-
-bestmove g8h8 Score: 48999
+bestmove d3e4 Score: 48989
 Mahoraga : Parsed go command
