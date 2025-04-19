@@ -116,3 +116,26 @@ Time Elapsed: 906 ms
 Nodes: 40938
 Depth: 6
 --------------------------------------
+
+
+tricky position (r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ) - transposition table optimization and fine tune optimizations (mating scores and bug fixes)
+
+Time Elapsed: 16 ms
+Nodes: 48
+Depth: 1
+--------------------------------------
+
+Time Elapsed: 46 ms
+Nodes: 540
+Depth: 3
+--------------------------------------
+
+Time Elapsed: 688 ms
+Nodes: 29982
+Depth: 6
+--------------------------------------
+
+Time Elapsed: 25485 ms
+Nodes: 905643
+Depth: 10
+--------------------------------------

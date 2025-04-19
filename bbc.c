@@ -1383,12 +1383,12 @@ int make_move(int move, int move_flag){
                 // remove piece from source square
                 pop_bit(piece_bitboards[P], target_square);
                 // remove piece from hash
-                hash_key ^= piece_keys[piece][target_square];
+                hash_key ^= piece_keys[P][target_square];
             }else{
                 // remove piece from source square
                 pop_bit(piece_bitboards[p], target_square);
                 // remove piece from hash
-                hash_key ^= piece_keys[piece][target_square];
+                hash_key ^= piece_keys[p][target_square];
             }
 
             // add promoted piece to target square
@@ -1418,12 +1418,14 @@ int make_move(int move, int move_flag){
 
         // handle setting en passant square
         if(double_push_flag){
-            (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
+            // (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
             // hash_key ^= enpassant_keys[enpassant];
 
             if(side == white){
+                enpassant = target_square + 8;
                 hash_key ^= enpassant_keys[target_square + 8];
             }else{
+                enpassant = target_square - 8;
                 hash_key ^= enpassant_keys[target_square - 8];
             }
         }
@@ -1497,15 +1499,15 @@ int make_move(int move, int move_flag){
         hash_key ^= side_key;
 
         // debug hash key generation
-        // u64 hash_debug = generate_hash_key();
+        u64 hash_debug = generate_hash_key();
 
-        // if(hash_key != hash_debug){
-        //     print_chessboard();
-        //     printf("Hash key mismatch! >>MAKE MOVE : %s <<\n", print_move(move));
-        //     printf("Hash key: %llx\n", hash_key);
-        //     printf("Hash debug: %llx\n", hash_debug);
-        //     getchar();
-        // }    
+        if(hash_key != hash_debug){
+            print_chessboard();
+            printf("Hash key mismatch! >>MAKE MOVE : %s <<\n", print_move(move));
+            printf("Hash key: %llx\n", hash_key);
+            printf("Hash debug: %llx\n", hash_debug);
+            getchar();
+        }    
 
         if(side == white){
             int square_index = get_lsb_index(piece_bitboards[k]); // get index of black king
@@ -2491,6 +2493,12 @@ static inline int evaluate(){
     * 
     ******************************************** 
 */
+
+// max ply
+#define MAX_PLY 64
+#define MATE_VALUE 49000
+#define MATE_SCORE 48000
+
 // size of  transposition table in bytes
 #define t_table_size 0x400000 // 4mb
 // no hash entry found
@@ -2512,6 +2520,9 @@ static inline int evaluate(){
  * Used during chess move evaluation and search optimization
  */
 #define hashfBETA 2
+
+// half move counter
+int ply;
 
 
 /** 
@@ -2556,13 +2567,37 @@ static inline int probe_table(int alpha, int beta, int depth){
 
     t_table *hash_entry = &transposition_table[hash_key % t_table_size];
     if(hash_entry->key == hash_key && hash_entry->depth >= depth){
-        if(hash_entry->flag == hashfEXACT){
-            return hash_entry->score;
+        int score = hash_entry->score; 
+
+        if(score < -MATE_SCORE){
+            score += ply;
         }
-        if(hash_entry->flag == hashfALPHA && hash_entry->score <= alpha){
+
+        if(score > MATE_SCORE){
+            score -= ply;
+        }
+
+
+        if(abs(score) >=  48000){
+            // printf("Retrieved mate score from TT: %d, Depth: %d, Flag: %d\n", 
+                // hash_entry->score, hash_entry->depth, hash_entry->flag);
+        }
+
+        // debug
+        // if(score < -MATE_SCORE) score -= ply;
+        // if(score > MATE_SCORE) score += ply;
+
+        // cmk
+        // if (score < -mate_score) score += ply;
+        // if (score > mate_score) score -= ply;
+
+        if(hash_entry->flag == hashfEXACT){
+            return score;
+        }
+        if((hash_entry->flag == hashfALPHA) && (score <= alpha)){
             return alpha;
         }
-        if(hash_entry->flag == hashfBETA && hash_entry->score >= beta){
+        if((hash_entry->flag == hashfBETA) && (score >= beta)){
             return beta;
         }
     }
@@ -2582,6 +2617,32 @@ static inline int probe_table(int alpha, int beta, int depth){
  */
 static inline void write_table(int score, int depth, int flag){
     t_table *hash_entry = &transposition_table[hash_key % t_table_size];
+
+    if(score < -MATE_SCORE){
+        score -= ply;
+    } 
+    if(score > MATE_SCORE){
+        score += ply;
+    }
+
+    // debug 
+    // if(score < -MATE_SCORE) score += ply;
+    // if(score > MATE_SCORE) score -= ply;
+
+    if(abs(hash_entry->score) > 48000 && hash_entry->key != 0) {
+        // printf("WARNING: Overwriting mate score %d with %d at depth %d\n", 
+            //    hash_entry->score, score, depth);
+    }
+
+    if(abs(score) >= 48000){
+        // printf("Writing mate score to TT: %d, Depth: %d, Flag: %d\n",
+            // score, depth, flag);
+    }
+
+    // cmk
+    // if (score < -mate_score) score -= ply;
+    // if (score > mate_score) score += ply;
+    
     hash_entry->key = hash_key;
     hash_entry->depth = depth;
     hash_entry->flag = flag;
@@ -2634,11 +2695,8 @@ static int mvv_lva[12][12] = {
    100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
 };
 
-// max ply
-#define MAX_PLY 64
 
-// half move counter
-int ply;
+
 // killer moves
 int killer_moves[2][MAX_PLY];
 // history moves
@@ -2653,6 +2711,14 @@ int pv_table[MAX_PLY][MAX_PLY];
 int follow_pv, score_pv;
 
 
+/**
+ * Determines whether to score and follow the principal variation (PV) move.
+ * 
+ * Checks if the current move matches the principal variation move at the current ply,
+ * and sets flags to enable PV move scoring and following.
+ * 
+ * @param move_list Pointer to the list of moves to be evaluated
+ */
 static inline void pv_scoring(moves *move_list){
     follow_pv = 0;
 
@@ -2883,7 +2949,7 @@ static inline int negamax(int alpha, int beta, int depth){
 
     int hashf = hashfALPHA;
 
-    if(ply && ((score = probe_table(alpha, beta, depth)) != no_hash_found)){
+    if(ply && (score = probe_table(alpha, beta, depth)) != no_hash_found){
         return score;
     }
 
@@ -2967,7 +3033,7 @@ static inline int negamax(int alpha, int beta, int depth){
 
             if(score > alpha){
                 score = -negamax(-alpha - 1, -alpha, depth - 1); // search a closed window around alpha
-                if(score > alpha && score < beta){ // if the score fails high but falls under beta, re-search the entire window (do full search)
+                if((score > alpha) && (score < beta)){ // if the score fails high but falls under beta, re-search the entire window (do full search)
                     score = -negamax(-beta, -alpha, depth - 1); // normal search
                 }
             }
@@ -2987,6 +3053,13 @@ static inline int negamax(int alpha, int beta, int depth){
             
             // switch hash flag to exact
             hashf = hashfEXACT;
+
+            // store history moves
+            if(get_capture(move) == 0){
+                history_moves[get_piece(move)][get_target_square(move)] += depth;
+            }
+
+            alpha = score;
             // write PV move
             pv_table[ply][ply] = move;
             for(int next = ply + 1; next < pv_length[ply + 1]; next++){
@@ -2996,12 +3069,6 @@ static inline int negamax(int alpha, int beta, int depth){
             
             // update PV length
             pv_length[ply] = pv_length[ply + 1];
-            
-            // store history moves
-            if(get_capture(move) == 0){
-                history_moves[get_piece(move)][get_target_square(move)] += depth;
-            }
-            alpha = score;
             
             // fail high
             if(score >= beta){
@@ -3020,7 +3087,8 @@ static inline int negamax(int alpha, int beta, int depth){
     // check for checkmate or stalemate
     if(legal_moves == 0){
         if(in_check){
-            return -990995 + ply; // checkmate
+            // printf("Found mate! Score: %d, Depth: %d, Ply: %d\n", (-MATE_VALUE + ply), depth, ply);
+            return -MATE_VALUE + ply; // checkmate
         }
         else{ // stalemate
             return 0;
@@ -3040,7 +3108,7 @@ static inline int negamax(int alpha, int beta, int depth){
  * and alpha-beta pruning algorithms, representing a theoretically 
  * unreachable score value.
  */
-#define INF 1000000
+#define INF 50000
 
 /**
  * Initiates the chess move search process.
@@ -3065,7 +3133,6 @@ void search(int depth){
 
     int score = 0;
     for(int current_depth = 1; current_depth <= depth; current_depth++){
-        nodes = 0;
         follow_pv = 1;
         score = negamax(alpha, beta, current_depth);
 
@@ -3073,6 +3140,7 @@ void search(int depth){
         if((score <= alpha) || (score >= beta)){
             alpha = -INF;
             beta = INF;
+            continue;
         }
         // narrow aspiration window
         alpha = score - 50;
@@ -3177,6 +3245,7 @@ void uci_loop(){
         if(strncmp(input_buffer, "position", 8) == 0){
             // parse position
             parse_position(input_buffer);
+            print_chessboard();
             log_message("Mahoraga : Parsed position command\n");
             continue;
         }
@@ -3269,16 +3338,26 @@ int main(){
     
     int debug = 0;
     if(debug){
-        parse_fen(tricky_position);
+        parse_fen("Q7/8/6k1/8/8/8/8/2K5 w - - 0 1");
         print_chessboard();
-        search(7);
-        moves move_list[1];
-        generate_moves(move_list);
-        make_move(move_list->move_list[0] , all_moves);
-        search(7);
-        generate_moves(move_list);
-        make_move(move_list->move_list[0] , all_moves);
-        search(7);
+        search(10);
+        char moves[10000] = "position fen 1r3k2/8/5K2/8/8/8/8/1Q6 w - - 0 1 moves ";
+        // strcat(moves, print_move(pv_table[0][0]));
+        // parse_position(moves);
+        // print_chessboard();
+
+        
+        // while(pv_table[0][0] != 0){
+        //     char bestmove[50]; 
+        //     strcpy(bestmove, print_move(pv_table[0][0]));
+        //     strcat(bestmove, " ");
+        //     strcat(moves, bestmove);
+        //     printf("\nFEN -> %s\n", moves);
+        //     parse_position(moves);
+        //     print_chessboard();
+        //     search(1);
+        //     getchar();
+        // }
 
     }else{
         uci_loop();
