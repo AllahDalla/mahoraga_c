@@ -1,9 +1,24 @@
 Initializing engine
 Sent initial UCI identification
-Lucas : position fen Q7/8/6k1/8/8/8/8/2K5 w - - 0 1 moves c1c2 g6f6 c2d3 f6g7
+Lucas : uci
+
+Sent initial UCI identification
+Lucas : ucinewgame
+
+Mahoraga : Parsed new game command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : position startpos moves c2c4
 
 Mahoraga : Parsed position command
-Lucas : go depth 21
+Lucas : isready
 
-bestmove d3e4 Score: 48989
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e7e5 Score: -5
 Mahoraga : Parsed go command
+Lucas : stop
+
+Mahoraga : Quitting

@@ -13,6 +13,7 @@
 #define tricky_position "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
 #define killer_position "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq d5 0 1"
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
+#define repetition_position "2r3k1/R7/8/1R6/8/8/P4KPP/8 w - - 0 40 "
 
 
 
@@ -155,6 +156,12 @@ int enpassant = no_sq;
 
 // castling rights
 int castle;
+
+// repetition table
+u64 repetition_table[200];
+
+// repetition index
+int rep_index = 0;
 
 
 
@@ -2816,6 +2823,15 @@ void print_move_scores(moves *move_list)
 }
 
 
+static inline int is_repetition(){
+    for(int index = 0; index < rep_index; index++){
+        if(repetition_table[index] == hash_key){
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 
 /**
@@ -2864,10 +2880,14 @@ static inline int q_search(int alpha, int beta){
         // increment ply
         ply++;
 
+        repetition_table[rep_index] = hash_key;
+        rep_index++;
+
         
         if(make_move(move, captures_only) == 0){
             // illegal move
             ply--;
+            rep_index--;
             continue;
         }
 
@@ -2879,6 +2899,7 @@ static inline int q_search(int alpha, int beta){
         restore_board();
         // decrement ply
         ply--;
+        rep_index--;
 
 
         
@@ -2918,7 +2939,13 @@ static inline int negamax(int alpha, int beta, int depth){
 
     int hashf = hashfALPHA;
 
-    if(ply && (score = probe_table(alpha, beta, depth)) != no_hash_found){
+    if(ply && is_repetition()){
+        return 0; // draw score for three fold repetition
+    }
+
+    int pv_node = (beta - alpha > 1);
+
+    if(ply && (score = probe_table(alpha, beta, depth)) != no_hash_found && pv_node == 0){
         return score;
     }
 
@@ -2946,6 +2973,10 @@ static inline int negamax(int alpha, int beta, int depth){
         copy_board();
         // increment ply
         ply++;
+
+        repetition_table[rep_index] = hash_key;
+        rep_index++;
+
         if(enpassant != no_sq) hash_key ^= enpassant_keys[enpassant]; // hash enpassant for null move pruning
         enpassant = no_sq;
         side ^= 1; // give opponent a free move
@@ -2955,6 +2986,7 @@ static inline int negamax(int alpha, int beta, int depth){
         int score = -negamax(-beta, -beta + 1, depth - 1 - 2);
         // decrement ply
         ply--;
+        rep_index--;
         restore_board();
         if(score >= beta){
             return beta;
@@ -2979,9 +3011,13 @@ static inline int negamax(int alpha, int beta, int depth){
         // increment ply
         ply++;
 
+        repetition_table[rep_index] = hash_key;
+        rep_index++;
+
         if(make_move(move, all_moves) == 0){
             // illegal move
             ply--;
+            rep_index--;
             continue;
         }
 
@@ -3012,6 +3048,7 @@ static inline int negamax(int alpha, int beta, int depth){
         restore_board();
         // decrement ply
         ply--;
+        rep_index--;
 
         // increment the counter for the number of moves searched
         moves_searched++;
@@ -3113,8 +3150,16 @@ void search(int depth){
         // narrow aspiration window
         alpha = score - 50;
         beta = score + 50;
+
+        if(score > -MATE_VALUE && score  < -MATE_SCORE){
+            printf("info score mate %d depth %d nodes %ld pv ", -(score + MATE_VALUE) / 2 - 1, current_depth, nodes);
+        }else if(score > MATE_SCORE && score < MATE_VALUE){
+            printf("info score mate %d depth %d nodes %ld pv ", (MATE_VALUE - score) / 2 + 1, current_depth, nodes);
+        }else{
+            
+            printf("info score cp %d depth %d nodes %ld pv ", score, current_depth, nodes);
+        }
         
-        printf("info score cp %d depth %d nodes %ld pv ", score, current_depth, nodes);
         for(int count = 0; count < pv_length[0]; count++){
             printf("%s ", print_move(pv_table[0][count]));
         }
@@ -3215,6 +3260,7 @@ void uci_loop(){
             parse_position(input_buffer);
             // print_chessboard();
             log_message("Mahoraga : Parsed position command\n");
+            clear_table(); // clear hash table
             continue;
         }
         // parse new game
@@ -3306,27 +3352,12 @@ int main(){
     
     int debug = 0;
     if(debug){
-        parse_fen("Q7/8/6k1/8/8/8/8/2K5 w - - 0 1");
+        // mate propagation - "Q7/8/6k1/8/8/8/8/2K5 w - - 0 1"
+        parse_fen(repetition_position);
         print_chessboard();
         search(10);
-        char moves[10000] = "position fen 1r3k2/8/5K2/8/8/8/8/1Q6 w - - 0 1 moves ";
-        // strcat(moves, print_move(pv_table[0][0]));
-        // parse_position(moves);
-        // print_chessboard();
-
-        
-        // while(pv_table[0][0] != 0){
-        //     char bestmove[50]; 
-        //     strcpy(bestmove, print_move(pv_table[0][0]));
-        //     strcat(bestmove, " ");
-        //     strcat(moves, bestmove);
-        //     printf("\nFEN -> %s\n", moves);
-        //     parse_position(moves);
-        //     print_chessboard();
-        //     search(1);
-        //     getchar();
-        // }
-
+        make_move(pv_table[0][0], all_moves);
+        search(10);
     }else{
         uci_loop();
     }
