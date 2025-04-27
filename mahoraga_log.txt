@@ -9,7 +9,7 @@ Mahoraga : Parsed new game command
 Lucas : isready
 
 Mahoraga : readyok
-Lucas : position startpos moves c2c4
+Lucas : position startpos moves e2e4
 
 Mahoraga : Parsed position command
 Lucas : isready
@@ -17,8 +17,313 @@ Lucas : isready
 Mahoraga : readyok
 Lucas : go depth 10
 
-bestmove e7e5 Score: -5
+bestmove e7e5 Score: -20
 Mahoraga : Parsed go command
-Lucas : stop
+Lucas : position startpos moves e2e4 e7e5 b1c3
 
-Mahoraga : Quitting
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g8f6 Score: -20
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove d7d5 Score: -5
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove b8c6 Score: -10
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove c6e5 Score: -10
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e5g6 Score: -15
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove f8b4 Score: 20
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove b4c3 Score: 55
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove d5e4 Score: 45
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove d8e7 Score: 50
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e8g8 Score: 105
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove c8g4 Score: 310
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e4e3 Score: 350
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e7a3 Score: 350
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g4d1 Score: 360
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove a3c3 Score: 365
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove c3a5 Score: 380
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove f8e8 Score: 390
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove a8d8 Score: 395
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove f6h5 Score: 485
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove a5e1 Score: 485
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e1h4 Score: 485
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove h4g4 Score: 495
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g6e5 Score: 520
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove e5f3 Score: 510
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g4f3 Score: 520
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove f3g4 Score: 525
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4 f3g4 h2c7
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove d8d7 Score: 520
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4 f3g4 h2c7 d8d7 h1g1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g4f5 Score: 525
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4 f3g4 h2c7 d8d7 h1g1 g4f5 c7h2
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove h5f6 Score: 520
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4 f3g4 h2c7 d8d7 h1g1 g4f5 c7h2 h5f6 e1g3
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+
+bestmove g7g6 Score: 520
+Mahoraga : Parsed go command
+Lucas : position startpos moves e2e4 e7e5 b1c3 g8f6 d2d3 d7d5 f2f4 b8c6 f4e5 c6e5 c1f4 e5g6 f4g3 f8b4 g1f3 b4c3 b2c3 d5e4 d1e2 d8e7 f3d4 e8g8 e1c1 c8g4 e2d2 e4e3 d2e1 e7a3 c1b1 g4d1 e1d1 a3c3 d4e2 c3a5 d1c1 f8e8 h2h4 a8d8 c1b2 f6h5 g3h2 a5e1 b2c1 e1h4 g2g3 h4g4 c1e1 g6e5 f1g2 e5f3 g2f3 g4f3 g3g4 f3g4 h2c7 d8d7 h1g1 g4f5 c7h2 h5f6 e1g3 g7g6 g1h1
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+

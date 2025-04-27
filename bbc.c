@@ -158,10 +158,13 @@ int enpassant = no_sq;
 int castle;
 
 // repetition table
-u64 repetition_table[200];
+u64 repetition_table[1000];
 
 // repetition index
 int rep_index = 0;
+
+// half move counter
+int ply;
 
 
 
@@ -522,6 +525,8 @@ void parse_fen(char *fen){
     side = white;
     enpassant = no_sq;
     castle = 0;
+    rep_index = 0;
+    memset(repetition_table, 0ULL, sizeof(repetition_table));
 
     int index = 0;
     int space = 1;
@@ -2311,6 +2316,9 @@ void parse_position(char *command){
                 break;
             }
 
+            rep_index++; // increment repetition index to point to next repetition and store first move (do not overwrite first move)
+            repetition_table[rep_index] = hash_key;
+
             make_move(move, all_moves);
 
             while(*current_char && *current_char != ' '){
@@ -2527,9 +2535,6 @@ static inline int evaluate(){
  * Used during chess move evaluation and search optimization
  */
 #define hashfBETA 2
-
-// half move counter
-int ply;
 
 
 /** 
