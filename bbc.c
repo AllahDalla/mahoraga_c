@@ -2437,6 +2437,418 @@ const int mirror_score[128] =
 };
 
 
+// file mask
+u64 file_mask[64] = {
+    0x101010101010101ULL, 
+    0x202020202020202ULL, 
+    0x404040404040404ULL, 
+    0x808080808080808ULL, 
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL, 
+    0x202020202020202ULL, 
+    0x404040404040404ULL, 
+    0x808080808080808ULL, 
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL, 
+    0x202020202020202ULL, 
+    0x404040404040404ULL, 
+    0x808080808080808ULL, 
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL,
+    0x202020202020202ULL,
+    0x404040404040404ULL,
+    0x808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL,
+    0x202020202020202ULL,
+    0x404040404040404ULL,
+    0x808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL,
+    0x202020202020202ULL,
+    0x404040404040404ULL,
+    0x808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL,
+    0x202020202020202ULL,
+    0x404040404040404ULL,
+    0x808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL,
+    0x101010101010101ULL,
+    0x202020202020202ULL,
+    0x404040404040404ULL,
+    0x808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL
+};
+
+// rank mask
+u64 rank_mask[64] = {
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xffULL,  
+    0xff00ULL,
+    0xff00ULL,
+    0xff00ULL,  
+    0xff00ULL,  
+    0xff00ULL,  
+    0xff00ULL,  
+    0xff00ULL,  
+    0xff00ULL,  
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff0000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff00000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff0000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL,
+    0xff00000000000000ULL
+};
+
+// isolated pawn mask
+u64 isolated_pawn_mask[64] = {
+    0x202020202020202ULL, 
+    0x505050505050505ULL, 
+    0xa0a0a0a0a0a0a0aULL, 
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL, 
+    0x505050505050505ULL, 
+    0xa0a0a0a0a0a0a0aULL, 
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL, 
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL,
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL,
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL,
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL,
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL,
+    0x202020202020202ULL,
+    0x505050505050505ULL,
+    0xa0a0a0a0a0a0a0aULL,
+    0x1414141414141414ULL,
+    0x2828282828282828ULL,
+    0x5050505050505050ULL,
+    0xa0a0a0a0a0a0a0a0ULL,
+    0x4040404040404040ULL
+};
+
+// white passed pawn mask
+u64 white_passed_pawn_mask[64] = {
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x0ULL,  
+    0x3ULL,  
+    0x7ULL,  
+    0xeULL,  
+    0x1cULL, 
+    0x38ULL, 
+    0x70ULL, 
+    0xe0ULL, 
+    0xc0ULL, 
+    0x303ULL,
+    0x707ULL,
+    0xe0eULL,
+    0x1c1cULL,
+    0x3838ULL,
+    0x7070ULL,
+    0xe0e0ULL,
+    0xc0c0ULL,
+    0x30303ULL,
+    0x70707ULL,
+    0xe0e0eULL,
+    0x1c1c1cULL,
+    0x383838ULL,
+    0x707070ULL,
+    0xe0e0e0ULL,
+    0xc0c0c0ULL,
+    0x3030303ULL,
+    0x7070707ULL,
+    0xe0e0e0eULL,
+    0x1c1c1c1cULL,
+    0x38383838ULL,
+    0x70707070ULL,
+    0xe0e0e0e0ULL,
+    0xc0c0c0c0ULL,
+    0x303030303ULL,
+    0x707070707ULL,
+    0xe0e0e0e0eULL,
+    0x1c1c1c1c1cULL,
+    0x3838383838ULL,
+    0x7070707070ULL,
+    0xe0e0e0e0e0ULL,
+    0xc0c0c0c0c0ULL,
+    0x30303030303ULL,
+    0x70707070707ULL,
+    0xe0e0e0e0e0eULL,
+    0x1c1c1c1c1c1cULL,
+    0x383838383838ULL,
+    0x707070707070ULL,
+    0xe0e0e0e0e0e0ULL,
+    0xc0c0c0c0c0c0ULL,
+    0x3030303030303ULL,
+    0x7070707070707ULL,
+    0xe0e0e0e0e0e0eULL,
+    0x1c1c1c1c1c1c1cULL,
+    0x38383838383838ULL,
+    0x70707070707070ULL,
+    0xe0e0e0e0e0e0e0ULL,
+    0xc0c0c0c0c0c0c0ULL
+};
+// black passed pawn mask
+u64 black_passed_pawn_mask[64] = {
+    0x303030303030300ULL, 
+    0x707070707070700ULL, 
+    0xe0e0e0e0e0e0e00ULL, 
+    0x1c1c1c1c1c1c1c00ULL,
+    0x3838383838383800ULL,
+    0x7070707070707000ULL,
+    0xe0e0e0e0e0e0e000ULL,
+    0xc0c0c0c0c0c0c000ULL,
+    0x303030303030000ULL, 
+    0x707070707070000ULL, 
+    0xe0e0e0e0e0e0000ULL, 
+    0x1c1c1c1c1c1c0000ULL,
+    0x3838383838380000ULL,
+    0x7070707070700000ULL,
+    0xe0e0e0e0e0e00000ULL,
+    0xc0c0c0c0c0c00000ULL,
+    0x303030303000000ULL, 
+    0x707070707000000ULL,
+    0xe0e0e0e0e000000ULL,
+    0x1c1c1c1c1c000000ULL,
+    0x3838383838000000ULL,
+    0x7070707070000000ULL,
+    0xe0e0e0e0e0000000ULL,
+    0xc0c0c0c0c0000000ULL,
+    0x303030300000000ULL,
+    0x707070700000000ULL,
+    0xe0e0e0e00000000ULL,
+    0x1c1c1c1c00000000ULL,
+    0x3838383800000000ULL,
+    0x7070707000000000ULL,
+    0xe0e0e0e000000000ULL,
+    0xc0c0c0c000000000ULL,
+    0x303030000000000ULL,
+    0x707070000000000ULL,
+    0xe0e0e0000000000ULL,
+    0x1c1c1c0000000000ULL,
+    0x3838380000000000ULL,
+    0x7070700000000000ULL,
+    0xe0e0e00000000000ULL,
+    0xc0c0c00000000000ULL,
+    0x303000000000000ULL,
+    0x707000000000000ULL,
+    0xe0e000000000000ULL,
+    0x1c1c000000000000ULL,
+    0x3838000000000000ULL,
+    0x7070000000000000ULL,
+    0xe0e0000000000000ULL,
+    0xc0c0000000000000ULL,
+    0x300000000000000ULL,
+    0x700000000000000ULL,
+    0xe00000000000000ULL,
+    0x1c00000000000000ULL,
+    0x3800000000000000ULL,
+    0x7000000000000000ULL,
+    0xe000000000000000ULL,
+    0xc000000000000000ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL,
+    0x0ULL
+};
+
+// sets up masks for file and rank
+u64 set_file_rank_mask(int file_number, int rank_number){
+    u64 mask = 0ULL;
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
+            int square = rank * 8 + file;
+            if(file == file_number){
+                mask |= set_bit(mask, square);
+            }else if(rank == rank_number){
+                mask |= set_bit(mask, square);
+            }
+        }
+    }
+    return mask;
+}
+
+void init_evaluation_masks(){
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
+            int square = rank * 8 + file;
+            file_mask[square] |= set_file_rank_mask(file, -1);
+            rank_mask[square] |= set_file_rank_mask(-1, rank);
+
+            isolated_pawn_mask[square] |= set_file_rank_mask(file - 1, -1);
+            isolated_pawn_mask[square] |= set_file_rank_mask(file, -1);
+            isolated_pawn_mask[square] |= set_file_rank_mask(file + 1, -1);
+
+            white_passed_pawn_mask[square] |= set_file_rank_mask(file - 1, -1);
+            white_passed_pawn_mask[square] |= set_file_rank_mask(file, -1);
+            white_passed_pawn_mask[square] |= set_file_rank_mask(file + 1, -1);
+
+            black_passed_pawn_mask[square] |= set_file_rank_mask(file - 1, -1);
+            black_passed_pawn_mask[square] |= set_file_rank_mask(file, -1);
+            black_passed_pawn_mask[square] |= set_file_rank_mask(file + 1, -1);
+
+            for(int i = 0; i < (8 - rank); i++){
+                white_passed_pawn_mask[square]  &= ~rank_mask[(7 - i) * 8 + file];
+            }
+
+            for(int i = 0; i < rank + 1; i++){
+                black_passed_pawn_mask[square]  &= ~rank_mask[i * 8 + file];
+            }
+
+            // print_bitboard(black_passed_pawn_mask[square]);
+            // printf("0x%llxULL,\n", file_mask[square]);
+            // printf("0x%llxULL,\n", rank_mask[square]);
+            printf("0x%llxULL,\n", black_passed_pawn_mask[square]);
+            // getchar();
+        }
+
+    }
+
+    // for debugging
+    // for(int square = 0; square < 64; square++){
+    //     printf("File Mask %s: \n", square_to_coordinate[square]);
+    //     print_bitboard(file_mask[square]);
+    //     printf("\n");
+    //     printf("Rank Mask %s: \n", square_to_coordinate[square]);
+    //     print_bitboard(rank_mask[square]);
+    //     printf("\n");
+    //     printf("Isolated Mask %s: \n", square_to_coordinate[square]);
+    //     print_bitboard(isolated_pawn_mask[square]);
+    //     printf("\n");
+    //     printf("White Passed Pawn Mask %s: \n", square_to_coordinate[square]);
+    //     print_bitboard(white_passed_pawn_mask[square]);
+    //     printf("\n");
+    //     printf("Black Passed Pawn Mask %s: \n", square_to_coordinate[square]);
+    //     print_bitboard(black_passed_pawn_mask[square]);
+    //     printf("\n");
+    //     getchar();
+    // }
+}
+
 
 static inline int evaluate(){
     int score = 0;
@@ -3324,6 +3736,7 @@ void initialize_engine(){
     init_slider_attacks(rook);
     init_random_keys(); // for hash table
     clear_table(); // clear hash table
+    init_evaluation_masks();
 
 }
 
@@ -3355,14 +3768,14 @@ int main(){
     
     initialize_engine();   
     
-    int debug = 0;
+    int debug = 1;
     if(debug){
         // mate propagation - "Q7/8/6k1/8/8/8/8/2K5 w - - 0 1"
         parse_fen(repetition_position);
         print_chessboard();
-        search(10);
-        make_move(pv_table[0][0], all_moves);
-        search(10);
+        // search(10);
+        // make_move(pv_table[0][0], all_moves);
+        // search(10);
     }else{
         uci_loop();
     }
