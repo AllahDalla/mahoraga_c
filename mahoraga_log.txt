@@ -1,2 +1,19 @@
 Initializing engine
 Sent initial UCI identification
+Lucas : uci
+
+Sent initial UCI identification
+Lucas : ucinewgame
+
+Mahoraga : Parsed new game command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : position startpos moves e2e4
+
+Mahoraga : Parsed position command
+Lucas : isready
+
+Mahoraga : readyok
+Lucas : go depth 10
+

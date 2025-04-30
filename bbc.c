@@ -2776,6 +2776,35 @@ u64 black_passed_pawn_mask[64] = {
     0x0ULL
 };
 
+// extract rank from a square [square]
+const int get_rank[64] = {
+    7, 7, 7, 7, 7, 7, 7, 7,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    1, 1, 1, 1, 1, 1, 1, 1,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+// double pawns penalty
+const int double_pawn_penalty = -10;
+
+// isolated pawn penalty
+const int isolated_pawn_penalty = -10;
+
+// open file score
+const int open_file_score = 15;
+
+// semi open file score
+const int semi_open_file_score = 10;
+
+// passed pawn bonus
+const int passed_pawn_bonus[8] = { 0, 10, 30, 50, 75, 100, 150, 200 };
+
+
+
 // sets up masks for file and rank
 u64 set_file_rank_mask(int file_number, int rank_number){
     u64 mask = 0ULL;
@@ -2800,7 +2829,6 @@ void init_evaluation_masks(){
             rank_mask[square] |= set_file_rank_mask(-1, rank);
 
             isolated_pawn_mask[square] |= set_file_rank_mask(file - 1, -1);
-            isolated_pawn_mask[square] |= set_file_rank_mask(file, -1);
             isolated_pawn_mask[square] |= set_file_rank_mask(file + 1, -1);
 
             white_passed_pawn_mask[square] |= set_file_rank_mask(file - 1, -1);
@@ -2819,10 +2847,10 @@ void init_evaluation_masks(){
                 black_passed_pawn_mask[square]  &= ~rank_mask[i * 8 + file];
             }
 
-            // print_bitboard(black_passed_pawn_mask[square]);
+            // print_bitboard(isolated_pawn_mask[square]);
             // printf("0x%llxULL,\n", file_mask[square]);
             // printf("0x%llxULL,\n", rank_mask[square]);
-            printf("0x%llxULL,\n", black_passed_pawn_mask[square]);
+            // printf("0x%llxULL,\n", isolated_pawn_mask[square]);
             // getchar();
         }
 
@@ -2853,7 +2881,7 @@ void init_evaluation_masks(){
 static inline int evaluate(){
     int score = 0;
     u64 bitboard;
-    int piece, square;
+    int piece, square, doubled_pawns;
     // loop over piece bitboards
     for(int board_piece = P; board_piece <= k; board_piece++){
         bitboard = piece_bitboards[board_piece];
@@ -2868,7 +2896,24 @@ static inline int evaluate(){
             switch(piece){
                 // evalue white pieces
                 case P:
+                    // positional score
                     score += pawn_score[square];
+                    // double pawn penalty
+                    doubled_pawns = count_bits(piece_bitboards[P] & file_mask[square]);
+                    if(doubled_pawns > 1){
+                        score += double_pawn_penalty * (doubled_pawns - 1);
+                    }
+
+                    // isolated pawn penalty
+                    if((piece_bitboards[P] & isolated_pawn_mask[square]) == 0) {
+                        score += isolated_pawn_penalty;
+                    }
+
+                    // passed pawn bonus
+                    if((piece_bitboards[p] & white_passed_pawn_mask[square]) == 0){
+                        score += passed_pawn_bonus[get_rank[square]];
+                    }
+
                     break;
                 case N:
                     score += knight_score[square];
@@ -2877,14 +2922,55 @@ static inline int evaluate(){
                     score += bishop_score[square];
                     break;
                 case R:
+                    // positional score
                     score += rook_score[square];
+
+                    // semi open file bonus
+                    if((piece_bitboards[P] & file_mask[square]) == 0){
+                        score += semi_open_file_score;
+                    }
+
+                    // open file bonus
+                    if(((piece_bitboards[P] | piece_bitboards[p]) & file_mask[square]) == 0){
+                        score += open_file_score;
+                    }
+
                     break;
                 case K:
+                    // positional score
                     score += king_score[square];
+
+                    // semi open file penalty
+                    if((piece_bitboards[P] & file_mask[square]) == 0){
+                        score -= semi_open_file_score;
+                    }
+
+                    // open file penalty
+                    if(((piece_bitboards[P] | piece_bitboards[p]) & file_mask[square]) == 0){
+                        score -= open_file_score;
+                    }
+
                     break;
                 // evalue black pieces
                 case p:
+                    // positional score
                     score -= pawn_score[mirror_score[square]];
+                    // double pawn penalty
+                    doubled_pawns = count_bits(piece_bitboards[p] & file_mask[square]);
+                    if(doubled_pawns > 1){
+                        score -= double_pawn_penalty * (doubled_pawns - 1);
+                    }
+
+                    // isolated pawn penalty
+                    if((piece_bitboards[p] & isolated_pawn_mask[square]) == 0) {
+                        score -= isolated_pawn_penalty;
+                    }
+
+                    // passed pawn bonus
+                    if((piece_bitboards[P] & black_passed_pawn_mask[square]) == 0){
+                        score -= passed_pawn_bonus[get_rank[mirror_score[square]]];
+                    }
+                    
                     break;
                 case n:
                     score -= knight_score[mirror_score[square]];
@@ -2893,10 +2979,33 @@ static inline int evaluate(){
                     score -= bishop_score[mirror_score[square]];
                     break;
                 case r:
+                    // positional score
                     score -= rook_score[mirror_score[square]];
+
+                    // semi open file bonus
+                    if((piece_bitboards[p] & file_mask[square]) == 0){
+                        score -= semi_open_file_score;
+                    }
+
+                    // open file bonus
+                    if(((piece_bitboards[p] | piece_bitboards[P]) & file_mask[square]) == 0){
+                        score -= open_file_score;
+                    }
+
                     break;
                 case k:
                     score -= king_score[mirror_score[square]];
+
+                    // semi open file penalty
+                    if((piece_bitboards[p] & file_mask[square]) == 0){
+                        score += semi_open_file_score;
+                    }
+
+                    // open file penalty
+                    if(((piece_bitboards[p] | piece_bitboards[P]) & file_mask[square]) == 0){
+                        score += open_file_score;
+                    }
+
                     break;
             }
 
@@ -3736,7 +3845,7 @@ void initialize_engine(){
     init_slider_attacks(rook);
     init_random_keys(); // for hash table
     clear_table(); // clear hash table
-    init_evaluation_masks();
+    // init_evaluation_masks();
 
 }
 
@@ -3768,14 +3877,15 @@ int main(){
     
     initialize_engine();   
     
-    int debug = 1;
+    int debug = 0;
     if(debug){
         // mate propagation - "Q7/8/6k1/8/8/8/8/2K5 w - - 0 1"
-        parse_fen(repetition_position);
+        parse_fen("6k1/5p1p/8/8/8/8/5P1P/6K1 w - - 0 1");
         print_chessboard();
-        // search(10);
-        // make_move(pv_table[0][0], all_moves);
-        // search(10);
+        printf("Score : %d\n", evaluate());
+       
+
+
     }else{
         uci_loop();
     }
