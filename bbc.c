@@ -2803,6 +2803,13 @@ const int semi_open_file_score = 10;
 // passed pawn bonus
 const int passed_pawn_bonus[8] = { 0, 10, 30, 50, 75, 100, 150, 200 };
 
+// king shield bonus
+const int king_shield_bonus = 5;
+// queen mobility bonus
+const int queen_mobility_bonus = 10;
+// bishop moobility bonus
+const int bishop_mobility_bonus = 15;
+
 
 
 // sets up masks for file and rank
@@ -2919,7 +2926,12 @@ static inline int evaluate(){
                     score += knight_score[square];
                     break;
                 case B:
+                    // positional score
                     score += bishop_score[square];
+
+                    // mobility bonus
+                    score += count_bits(get_bishop_attacks(square, occupancy_bitboards[both])) * bishop_mobility_bonus;
+
                     break;
                 case R:
                     // positional score
@@ -2936,6 +2948,11 @@ static inline int evaluate(){
                     }
 
                     break;
+
+                case Q:
+                    // mobility bonus
+                    score += count_bits(get_queen_attacks(square, occupancy_bitboards[both])) * queen_mobility_bonus;
+                    break;
                 case K:
                     // positional score
                     score += king_score[square];
@@ -2949,6 +2966,10 @@ static inline int evaluate(){
                     if(((piece_bitboards[P] | piece_bitboards[p]) & file_mask[square]) == 0){
                         score -= open_file_score;
                     }
+
+                    // king shield bonus
+                    score += count_bits(king_attacks[square] & occupancy_bitboards[white]) * king_shield_bonus;
+
 
                     break;
                 // evalue black pieces
@@ -2976,7 +2997,12 @@ static inline int evaluate(){
                     score -= knight_score[mirror_score[square]];
                     break;
                 case b:
+                    // positional score
                     score -= bishop_score[mirror_score[square]];
+
+                    // mobility bonus
+                    score -= count_bits(get_bishop_attacks(square, occupancy_bitboards[both])) * bishop_mobility_bonus;
+
                     break;
                 case r:
                     // positional score
@@ -2993,6 +3019,11 @@ static inline int evaluate(){
                     }
 
                     break;
+
+                case q:
+                    // mobility bonus
+                    score -= count_bits(get_queen_attacks(square, occupancy_bitboards[both])) * queen_mobility_bonus;
+                    break;
                 case k:
                     score -= king_score[mirror_score[square]];
 
@@ -3005,6 +3036,9 @@ static inline int evaluate(){
                     if(((piece_bitboards[p] | piece_bitboards[P]) & file_mask[square]) == 0){
                         score += open_file_score;
                     }
+
+                    // king sheild bonus
+                    score -= count_bits(king_attacks[square] & occupancy_bitboards[black]) * king_shield_bonus;
 
                     break;
             }
@@ -3880,7 +3914,7 @@ int main(){
     int debug = 0;
     if(debug){
         // mate propagation - "Q7/8/6k1/8/8/8/8/2K5 w - - 0 1"
-        parse_fen("6k1/5p1p/8/8/8/8/5P1P/6K1 w - - 0 1");
+        parse_fen("q5k1/5ppp/8/8/8/8/5PPP/Q5K1 w - - 0 1");
         print_chessboard();
         printf("Score : %d\n", evaluate());
        
