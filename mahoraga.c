@@ -3070,7 +3070,7 @@ static inline int evaluate(){
 #define MATE_SCORE 48000
 
 // size of  transposition table in bytes
-#define t_table_size 0x400000 // 4mb
+#define t_table_size 0x1400000 // 4mb
 // no hash entry found
 #define no_hash_found 200000
 
