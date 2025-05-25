@@ -1,0 +1,21 @@
+{
+  "name": "mahoraga_c",
+  "version": "1.0.0",
+  "description": "core chess engine using bitboard architecture for efficient move generation",
+  "main": "mahoraga.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node mahoraga.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AllahDalla/mahoraga_c.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AllahDalla/mahoraga_c/issues"
+  },
+  "homepage": "https://github.com/AllahDalla/mahoraga_c#readme"
+}
